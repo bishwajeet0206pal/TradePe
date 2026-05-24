@@ -722,28 +722,28 @@ class TradePeApp {
     const cta = document.getElementById('overview-continue-cta');
     if (order.settled) {
       cta.setAttribute('onclick', "app.switchSubTab('close')");
-      cta.querySelector('span').innerText = 'View Reconciliation Log &rarr;';
+      cta.querySelector('span').innerText = 'View Reconciliation Log';
     } else if (order.fxConverted) {
       cta.setAttribute('onclick', "app.switchSubTab('close')");
-      cta.querySelector('span').innerText = 'Proceed to Customs &rarr;';
+      cta.querySelector('span').innerText = 'Proceed to Customs';
     } else if (order.flowType === 'lc' && order.bankAuditStatus === 'complete') {
       cta.setAttribute('onclick', "app.switchSubTab('payment')");
-      cta.querySelector('span').innerText = 'Proceed to FX Lock &rarr;';
+      cta.querySelector('span').innerText = 'Proceed to FX Lock';
     } else if (order.documents.bl) {
       cta.setAttribute('onclick', "app.switchSubTab('payment')");
-      cta.querySelector('span').innerText = 'Proceed to Payment Audit &rarr;';
+      cta.querySelector('span').innerText = 'Proceed to Payment Audit';
     } else if (order.flowType === 'lc' && !order.lcAccepted) {
       cta.setAttribute('onclick', "app.switchSubTab('timeline')");
-      cta.querySelector('span').innerText = 'Verify & Accept LC &rarr;';
+      cta.querySelector('span').innerText = 'Verify & Accept LC';
     } else if (order.flowType === 'advance' && !order.advancePaymentReceived) {
       cta.setAttribute('onclick', "app.switchSubTab('timeline')");
-      cta.querySelector('span').innerText = 'Check Wire Status &rarr;';
+      cta.querySelector('span').innerText = 'Check Wire Status';
     } else if (order.flowType === 'open' && !order.shipped) {
       cta.setAttribute('onclick', "app.switchSubTab('documents')");
-      cta.querySelector('span').innerText = 'Upload Cargo Docs &rarr;';
+      cta.querySelector('span').innerText = 'Upload Cargo Docs';
     } else {
       cta.setAttribute('onclick', "app.switchSubTab('documents')");
-      cta.querySelector('span').innerText = 'Upload Documents &rarr;';
+      cta.querySelector('span').innerText = 'Upload Documents';
     }
   }
 
@@ -810,7 +810,7 @@ class TradePeApp {
               </div>
 
               <div style="margin-top:auto; padding-top:20px; border-top:1px solid var(--border-color);">
-                <button class="btn btn-primary" id="lc-accept-btn" onclick="app.acceptLcDraft()" style="width:100%; justify-content:center;" ${this.verifyLcChecked(order) ? '' : 'disabled'}>Verify & Accept LC Terms &rarr;</button>
+                <button class="btn btn-primary" id="lc-accept-btn" onclick="app.acceptLcDraft()" style="width:100%; justify-content:center;" ${this.verifyLcChecked(order) ? '' : 'disabled'}>Verify & Accept LC Terms</button>
               </div>
             </div>
           </div>
@@ -882,7 +882,7 @@ class TradePeApp {
         buttonHtml = `
           <div style="background:var(--primary-light-bg); border:1px solid hsl(var(--primary-hue), var(--primary-sat), 88%); border-radius:8px; padding:20px; text-align:center; margin-top:24px;">
             <p style="font-size:13px; font-weight:600; margin-bottom:12px;">Waiting for Advance Wire Transfer Arrival...</p>
-            <button class="btn btn-orange" onclick="app.simulateAdvanceWireArrival()" style="margin:0 auto;">Simulate Buyer Wire Arrival &rarr;</button>
+            <button class="btn btn-orange" onclick="app.simulateAdvanceWireArrival()" style="margin:0 auto;">Simulate Buyer Wire Arrival</button>
           </div>
         `;
       }
@@ -940,7 +940,7 @@ class TradePeApp {
         buttonHtml = `
           <div style="background:var(--primary-light-bg); border:1px solid hsl(var(--primary-hue), var(--primary-sat), 88%); border-radius:8px; padding:20px; text-align:center; margin-top:24px;">
             <p style="font-size:13px; font-weight:600; margin-bottom:12px;">Containers Transit Departed · Awaiting Buyer Payment Release...</p>
-            <button class="btn btn-orange" onclick="app.simulateOpenPaymentArrival()" style="margin:0 auto;">Simulate Buyer Net 60 Remittance &rarr;</button>
+            <button class="btn btn-orange" onclick="app.simulateOpenPaymentArrival()" style="margin:0 auto;">Simulate Buyer Net 60 Remittance</button>
           </div>
         `;
       }
@@ -1109,7 +1109,7 @@ class TradePeApp {
             <span class="alert-title">All required compliance paperwork loaded!</span>
             <span class="alert-desc">Your shipping documents match terms perfectly. Proceed to FX & Settlement for banking release.</span>
           </div>
-          <button class="btn btn-success" onclick="app.switchSubTab('${nextTabName}')" style="font-size:12px; padding:8px 16px;">Proceed to Payment &rarr;</button>
+          <button class="btn btn-success" onclick="app.switchSubTab('${nextTabName}')" style="font-size:12px; padding:8px 16px;">Proceed to Payment</button>
         </div>
       `;
     }
@@ -1222,7 +1222,7 @@ class TradePeApp {
           <div class="update-item"><span class="update-icon" style="background:#fff3cd; color:#d97706;">⌛</span><div class="update-content"><span class="update-text">Commercial Invoice match verification pending.</span></div></div>
           <div class="update-item"><span class="update-icon" style="background:#fff3cd; color:#d97706;">⌛</span><div class="update-content"><span class="update-text">Carrier Bill of Lading loading verification pending.</span></div></div>
         `;
-        actionBtnHtml = `<button class="btn btn-primary" onclick="app.executeLCAudit()" style="width:100%; justify-content:center; padding:12px;">Trigger SBI Bank Document Audit &rarr;</button>`;
+        actionBtnHtml = `<button class="btn btn-primary" onclick="app.executeLCAudit()" style="width:100%; justify-content:center; padding:12px;">Trigger SBI Bank Document Audit</button>`;
       } else if (order.bankAuditStatus === 'running') {
         auditLogHtml = `
           <div class="update-item"><span class="spinner" style="border-top-color:var(--primary); border-width:3px; width:20px; height:20px; border-style:solid; display:inline-block; border-radius:50%; animation:spin 1s linear infinite;"></span><div class="update-content"><span class="update-text" style="font-weight:600;">SBI compliance team running documentation match...</span></div></div>
@@ -1247,7 +1247,7 @@ class TradePeApp {
                 <div style="display:flex; justify-content:space-between; margin-bottom:8px;"><span class="text-muted">Rupee Yield Credits:</span><span class="text-bold" style="font-size:14px;">₹20,43,790</span></div>
                 <div style="display:flex; justify-content:space-between;"><span class="text-muted">TradePe savings vs banks:</span><span class="text-bold" style="color:var(--success);">₹32,340</span></div>
               </div>
-              <button class="btn btn-primary" onclick="app.executeFXConversion()" style="width:100%; justify-content:center; padding:12px; font-weight:700;">Convert USD ${order.value.toLocaleString()} to INR now &rarr;</button>
+              <button class="btn btn-primary" onclick="app.executeFXConversion()" style="width:100%; justify-content:center; padding:12px; font-weight:700;">Convert USD ${order.value.toLocaleString()} to INR now</button>
             </div>
           `;
         } else {
@@ -1315,7 +1315,7 @@ class TradePeApp {
                 <div style="display:flex; justify-content:space-between; margin-bottom:8px;"><span class="text-muted">Rupee Yield Credits:</span><span class="text-bold" style="font-size:14px;">₹${yieldRupees.toLocaleString()}</span></div>
                 <div style="display:flex; justify-content:space-between;"><span class="text-muted">TradePe savings vs banks:</span><span class="text-bold" style="color:var(--success);">₹${Math.round(order.value * 1.32).toLocaleString()}</span></div>
               </div>
-              <button class="btn btn-primary" onclick="app.executeFXConversion()" style="width:100%; justify-content:center; padding:12px; font-weight:700;">Convert USD ${order.value.toLocaleString()} to INR now &rarr;</button>
+              <button class="btn btn-primary" onclick="app.executeFXConversion()" style="width:100%; justify-content:center; padding:12px; font-weight:700;">Convert USD ${order.value.toLocaleString()} to INR now</button>
             </div>
           `;
         } else {
@@ -1388,7 +1388,7 @@ class TradePeApp {
                 <div style="display:flex; justify-content:space-between; margin-bottom:8px;"><span class="text-muted">Rupee Yield Credits:</span><span class="text-bold" style="font-size:14px;">₹${yieldRupees.toLocaleString()}</span></div>
                 <div style="display:flex; justify-content:space-between;"><span class="text-muted">TradePe savings vs banks:</span><span class="text-bold" style="color:var(--success);">₹${Math.round(order.value * 1.32).toLocaleString()}</span></div>
               </div>
-              <button class="btn btn-primary" onclick="app.executeFXConversion()" style="width:100%; justify-content:center; padding:12px; font-weight:700;">Convert USD ${order.value.toLocaleString()} to INR now &rarr;</button>
+              <button class="btn btn-primary" onclick="app.executeFXConversion()" style="width:100%; justify-content:center; padding:12px; font-weight:700;">Convert USD ${order.value.toLocaleString()} to INR now</button>
             </div>
           `;
         } else {
