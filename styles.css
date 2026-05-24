@@ -2357,4 +2357,199 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
+/* Horizontal Sub-Tab Bar */
+.workspace-subtabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 2px solid var(--border-color);
+  margin-bottom: 28px;
+  padding-bottom: 0;
+}
+.subtab-item {
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  position: relative;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all var(--transition-fast);
+}
+.subtab-item:hover {
+  color: var(--primary);
+}
+.subtab-item.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+.subtab-item.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.subtab-item.disabled:hover {
+  color: var(--text-muted);
+}
 
+/* UX Rules Styles: What Happened vs What Next */
+.what-happened-card {
+  background-color: hsl(210, 50%, 97%);
+  border-left: 4px solid var(--primary);
+  border-radius: 8px;
+  padding: 18px 24px;
+  margin-bottom: 24px;
+}
+.what-happened-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: hsl(220, 40%, 20%);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.what-happened-text {
+  font-size: 13px;
+  color: hsl(220, 30%, 35%);
+  line-height: 1.5;
+}
+
+.what-next-card {
+  background-color: hsl(28, 100%, 97.5%);
+  border-left: 4px solid var(--orange);
+  border-radius: 8px;
+  padding: 18px 24px;
+  margin-bottom: 24px;
+}
+.what-next-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: hsl(28, 90%, 25%);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.what-next-text {
+  font-size: 13px;
+  color: hsl(28, 80%, 35%);
+  line-height: 1.5;
+}
+
+.what-next-card.success-accent {
+  background-color: hsl(162, 70%, 97%);
+  border-left-color: var(--success);
+}
+.what-next-card.success-accent .what-next-title {
+  color: hsl(162, 84%, 20%);
+}
+.what-next-card.success-accent .what-next-text {
+  color: hsl(162, 70%, 30%);
+}
+
+/* Level 1 View Layout Grid Styles */
+.grid-layout {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
+}
+.list-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+}
+.profile-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+@media (max-width: 768px) {
+  .profile-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.badge-count {
+  background-color: var(--orange);
+  color: #fff;
+  border-radius: 10px;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: bold;
+}
+.update-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+.update-item:last-child {
+  border-bottom: none;
+}
+.update-icon {
+  font-size: 18px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: hsl(220, 20%, 94%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.update-content {
+  display: flex;
+  flex-direction: column;
+}
+.update-text {
+  font-size: 13px;
+  color: var(--text-main);
+  font-weight: 500;
+}
+.update-time {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.timeline-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.workspace-banner {
+  background: linear-gradient(135deg, hsl(228, 48%, 15%) 0%, hsl(228, 48%, 8%) 100%);
+  color: #fff;
+  padding: 20px 32px;
+  border-radius: var(--border-radius-lg);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-md);
+}
+.workspace-banner-info h3 {
+  font-size: 18px;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+.workspace-banner-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  opacity: 0.85;
+}
+.workspace-banner-status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+.workspace-banner-status span {
+  font-size: 11px;
+  opacity: 0.8;
+}
+.workspace-banner-status strong {
+  font-size: 13px;
+}

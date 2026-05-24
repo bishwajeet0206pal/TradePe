@@ -5,135 +5,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TradePe — Export Command Center</title>
   <meta name="description" content="TradePe Financial Operating System for cross-border trade, helping Indian exporters coordinate payments, letters of credit, and compliance.">
-  <link rel="stylesheet" href="styles.css?v=1.0.2">
+  <link rel="stylesheet" href="styles.css?v=1.0.3">
 </head>
-<body>  <!-- Setup / Access Gate Overlay -->
-  <div id="app-access-gate" class="gate-overlay" style="display:none;">
-    <div class="gate-card">
-      <h2 style="font-size:24px; font-family:'Outfit'; font-weight:800; text-align:center; margin-bottom:8px;">Welcome to TradePe</h2>
-      <p class="text-muted" style="text-align:center; font-size:13px; line-height:1.5; margin-bottom:32px; font-weight:500;">Select an exporter profile below to start the interactive demo. This configures the onboarding and LC trade lifecycle workflows.</p>
-      
-      <div class="gate-options-container">
-        <!-- Option 1: New User -->
-        <div class="gate-option" onclick="app.selectUserMode('new')">
-          <div class="gate-option-icon">🌱</div>
-          <h4 class="gate-option-title">New Exporter</h4>
-          <p class="gate-option-desc">Starts with business onboarding. Complete company profile, link your bank, and run Video KYC to unlock shipping features.</p>
-        </div>
-        
-        <!-- Option 2: Existing Exporter -->
-        <div class="gate-option" onclick="app.selectUserMode('existing')">
-          <div class="gate-option-icon">⚡</div>
-          <h4 class="gate-option-title">Existing Exporter</h4>
-          <p class="gate-option-desc">Skip onboarding. Load directly into an active transaction flow with a new buyer, ready to make payment decisions.</p>
-        </div>
-      </div>
-    </div>
-  </div>
+<body>
 
-  <!-- Sidebar Navigation with Stepper Guide -->
+  <!-- Level 1 Sidebar Navigation -->
   <aside class="sidebar">
-    <div class="sidebar-brand" style="cursor:pointer;" onclick="app.showDashboard()">
+    <div class="sidebar-brand" style="cursor:pointer;" onclick="app.switchTab('home')">
       <h1>TradePe</h1>
       <span>Export Command Center</span>
     </div>
     
-    <!-- Main Navigation (Dashboard Mode) -->
     <div class="sidebar-nav" id="main-sidebar-nav">
-      <div class="nav-item active" id="nav-item-home" onclick="app.showDashboard()">
+      <div class="nav-item active" id="nav-item-home" onclick="app.switchTab('home')">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:18px;height:18px;"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
         <span>Home</span>
       </div>
-      <div class="nav-item" onclick="app.showToast('Loading Orders List...')">
+      <div class="nav-item" id="nav-item-orders" onclick="app.switchTab('orders')">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:18px;height:18px;"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12M8.25 17.25h12M3 6.75h.008v.008H3V6.75zm0 5.25h.008v.008H3V12zm0 5.25h.008v.008H3v-.008z" /></svg>
         <span>Orders</span>
+        <span class="badge-count" id="sidebar-active-orders-count">2</span>
       </div>
-      <div class="nav-item" onclick="app.showToast('Opening Document Vault...')">
+      <div class="nav-item" id="nav-item-documents" onclick="app.switchTab('documents')">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:18px;height:18px;"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
         <span>Documents</span>
       </div>
-      <div class="nav-item" onclick="app.showToast('Checking pending compliance tasks...')">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:18px;height:18px;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-        <span>Tasks</span>
+      <div class="nav-item" id="nav-item-notifications" onclick="app.switchTab('notifications')">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:18px;height:18px;"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" /></svg>
+        <span>Notifications</span>
+        <span class="badge-count" style="background-color:var(--orange);">1</span>
       </div>
-    </div>
-    
-    <!-- Stepper Navigation (Wizard Mode) -->
-    <div class="stepper-nav" id="stepper-sidebar-nav" style="display:none;">
-      <div class="stepper-title">MVP TRADE LIFECYCLE</div>
-      
-      <div class="stepper-list">
-        <!-- Step 0: Onboarding -->
-        <div class="step-item" id="sidebar-step-0">
-          <div class="step-circle">0</div>
-          <div class="step-details">
-            <span class="step-name">Onboarding</span>
-            <span class="step-status">Company Verification</span>
-          </div>
-        </div>
-        
-        <!-- Step 1: Payment Decision -->
-        <div class="step-item" id="sidebar-step-1">
-          <div class="step-circle">1</div>
-          <div class="step-details">
-            <span class="step-name">Payment Decision</span>
-            <span class="step-status">Terms Agreement</span>
-          </div>
-        </div>
-
-        <!-- Step 2: Letter of Credit (LC) -->
-        <div class="step-item" id="sidebar-step-2">
-          <div class="step-circle">2</div>
-          <div class="step-details">
-            <span class="step-name">Verify Bank LC</span>
-            <span class="step-status">Check LC Discrepancies</span>
-          </div>
-        </div>
-
-        <!-- Step 3: Trade Documents -->
-        <div class="step-item" id="sidebar-step-3">
-          <div class="step-circle">3</div>
-          <div class="step-details">
-            <span class="step-name">Upload Documents</span>
-            <span class="step-status">Invoice & packing list</span>
-          </div>
-        </div>
-
-        <!-- Step 4: Dispatch Shipment -->
-        <div class="step-item" id="sidebar-step-4">
-          <div class="step-circle">4</div>
-          <div class="step-details">
-            <span class="step-name">Shipment & BL</span>
-            <span class="step-status">Carrier dispatch proof</span>
-          </div>
-        </div>
-
-        <!-- Step 5: Bank Submission -->
-        <div class="step-item" id="sidebar-step-5">
-          <div class="step-circle">5</div>
-          <div class="step-details">
-            <span class="step-name">Document Audit</span>
-            <span class="step-status">Bank payment release</span>
-          </div>
-        </div>
-
-        <!-- Step 6: FX Conversion -->
-        <div class="step-item" id="sidebar-step-6">
-          <div class="step-circle">6</div>
-          <div class="step-details">
-            <span class="step-name">FX Conversion</span>
-            <span class="step-status">Convert USD to INR</span>
-          </div>
-        </div>
-
-        <!-- Step 7: Settle & Close -->
-        <div class="step-item" id="sidebar-step-7">
-          <div class="step-circle">7</div>
-          <div class="step-details">
-            <span class="step-name">Settle & Close</span>
-            <span class="step-status">AD code reconciliation</span>
-          </div>
-        </div>
+      <div class="nav-item" id="nav-item-profile" onclick="app.switchTab('profile')">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:18px;height:18px;"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
+        <span>Profile</span>
       </div>
     </div>
     
@@ -146,138 +50,294 @@
     </div>
   </aside>
 
-  <!-- App Main Layout Container -->
+  <!-- App Main Content Area -->
   <div class="app-container">
     <header class="app-header">
       <div style="display:flex; align-items:center; gap:16px;">
-        <button class="btn btn-outline btn-sm" id="btn-back-to-dashboard" onclick="app.showDashboard()" style="display:none; align-items:center; gap:6px; font-size:11px; padding:6px 12px; height:32px; font-weight:700;">&larr; Exit Wizard</button>
+        <button class="btn btn-outline btn-sm" id="btn-back-to-list" onclick="app.exitWorkspace()" style="display:none; align-items:center; gap:6px; font-size:11px; padding:6px 12px; height:32px; font-weight:700;">&larr; Exit Workspace</button>
         <div class="header-title-container">
           <h2 id="page-header-title">Good morning, Ankita 👋</h2>
           <span id="page-header-subtitle">Here is what needs your attention today</span>
         </div>
       </div>
-      <div class="header-date">Sunday, 25 May 2026</div>
+      <div class="header-date" id="current-header-date">Sunday, 24 May 2026</div>
     </header>
 
     <main class="app-content" id="main-content" tabindex="-1">
 
-      <!-- ==================== MAIN DASHBOARD PANEL ==================== -->
-      <section id="panel-dashboard" class="view-screen active">
-        <!-- Summary Cards Grid -->
-        <div class="summary-cards-grid" style="margin-bottom:28px;">
-          <div class="stat-card blue" id="stat-active-card">
-            <span class="stat-value">3</span>
-            <span class="stat-label">Active orders</span>
+      <!-- ==================== HOME TAB view ==================== -->
+      <section id="panel-home" class="view-screen active">
+        <!-- Dashboard Stats Row -->
+        <div class="summary-cards-grid">
+          <div class="stat-card blue" onclick="app.switchTab('orders')">
+            <span class="stat-value" id="home-stat-active">2</span>
+            <span class="stat-label">Active Orders</span>
             <span class="stat-desc">In progress</span>
           </div>
-          <div class="stat-card orange" id="stat-attention-card">
-            <span class="stat-value" id="stat-attention-val">2</span>
-            <span class="stat-label">Need attention</span>
-            <span class="stat-desc">Action required</span>
+          <div class="stat-card orange" onclick="app.switchTab('home')">
+            <span class="stat-value" id="home-stat-attention">1</span>
+            <span class="stat-label">Action Required</span>
+            <span class="stat-desc">Pending verification</span>
           </div>
-          <div class="stat-card green" id="stat-completed-card">
-            <span class="stat-value" id="stat-completed-val">5</span>
+          <div class="stat-card green" onclick="app.switchTab('orders')">
+            <span class="stat-value" id="home-stat-completed">1</span>
             <span class="stat-label">Completed</span>
-            <span class="stat-desc">This month</span>
+            <span class="stat-desc">Ready/Archived</span>
           </div>
-          <div class="stat-card red" id="stat-overdue-card">
-            <span class="stat-value">1</span>
-            <span class="stat-label">Overdue</span>
-            <span class="stat-desc">Past expected date</span>
-          </div>
-        </div>
-
-        <!-- Needs Attention Section -->
-        <div class="section-container" id="needs-attention-section">
-          <div class="section-header">NEEDS ATTENTION</div>
-          <div class="table-card">
-            <table class="custom-table" id="needs-attention-table">
-              <thead>
-                <tr>
-                  <th>Order</th>
-                  <th>Buyer</th>
-                  <th>Amount</th>
-                  <th>Stage</th>
-                  <th>Action needed</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                <!-- Highlighted row for TRP-123 -->
-                <tr class="attention-row" id="dash-row-123" onclick="app.loadOrderWizard('TRP-123')">
-                  <td><span class="order-link">TRP-123</span></td>
-                  <td>ABC Textiles, New York</td>
-                  <td class="text-bold">$24,500</td>
-                  <td>Documents</td>
-                  <td class="text-action">Upload commercial invoice</td>
-                  <td><span class="status-badge orange" id="dash-badge-123">Doc Pending</span></td>
-                </tr>
-                <tr onclick="app.showToast('Order TRP-124 is awaiting buyer payment. No action required from Exporter Ankita Sharma right now.')">
-                  <td><span class="order-link">TRP-124</span></td>
-                  <td>Muller GmbH, Berlin</td>
-                  <td class="text-bold">$18,200</td>
-                  <td>Payment</td>
-                  <td class="text-muted">Awaiting buyer payment</td>
-                  <td><span class="status-badge blue">In Transit</span></td>
-                </tr>
-              </tbody>
-            </table>
+          <div class="stat-card blue" onclick="app.switchTab('profile')">
+            <span class="stat-value">₹83.42</span>
+            <span class="stat-label">Locked USD-INR</span>
+            <span class="stat-desc">TradePe FX Rate</span>
           </div>
         </div>
 
-        <!-- All Active Orders Section -->
-        <div class="section-container">
-          <div class="section-header">ALL ACTIVE ORDERS</div>
-          <div class="table-card">
-            <table class="custom-table" id="all-active-orders-table">
-              <thead>
-                <tr>
-                  <th>Order</th>
-                  <th>Buyer</th>
-                  <th>Amount</th>
-                  <th>Stage</th>
-                  <th>Action needed</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr onclick="app.loadOrderWizard('TRP-123')">
-                  <td><span class="order-link">TRP-123</span></td>
-                  <td>ABC Textiles, New York</td>
-                  <td class="text-bold">$24,500</td>
-                  <td>Documents</td>
-                  <td class="text-muted" id="dash-time-123">Updated 3 days ago</td>
-                  <td><span class="status-badge orange" id="dash-all-badge-123">Doc Pending</span></td>
-                </tr>
-                <tr onclick="app.showToast('Order TRP-124 is awaiting buyer payment.')">
-                  <td><span class="order-link">TRP-124</span></td>
-                  <td>Muller GmbH, Berlin</td>
-                  <td class="text-bold">$18,200</td>
-                  <td>Payment</td>
-                  <td class="text-muted">Updated 1 day ago</td>
-                  <td><span class="status-badge blue">In Transit</span></td>
-                </tr>
-                <tr onclick="app.showToast('Order TRP-125 is on track. Shipping complete.')">
-                  <td><span class="order-link">TRP-125</span></td>
-                  <td>Sunrise Imports, Dubai</td>
-                  <td class="text-bold">$9,800</td>
-                  <td>Shipment</td>
-                  <td class="text-muted">Updated 5 days ago</td>
-                  <td><span class="status-badge green">On Track</span></td>
-                </tr>
-              </tbody>
-            </table>
+        <div class="detail-grid">
+          <!-- Left Main Area -->
+          <div style="display:flex; flex-direction:column; gap:28px;">
+            
+            <!-- Quick Continue active order card -->
+            <div class="panel-card" style="border:1px solid hsl(var(--primary-hue), var(--primary-sat), 88%); background:hsl(var(--primary-hue), var(--primary-sat), 99%); padding:24px;">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;">
+                <div>
+                  <span class="status-badge blue" style="font-size:10px; margin-bottom:8px;">CONTINUE ACTIVE ORDER</span>
+                  <h3 style="font-size:20px; font-weight:800; color:var(--text-main); margin:0;" id="resume-card-title">TRP-123 · ABC Textiles</h3>
+                  <p class="text-muted" style="font-size:12px; margin:4px 0 0 0;">$24,500 cotton fabrics shipment under Letter of Credit terms</p>
+                </div>
+                <h4 style="font-size:20px; font-weight:800; color:var(--primary); margin:0;">$24,500</h4>
+              </div>
+              
+              <!-- Custom layout matching UX Rules -->
+              <div class="what-happened-card" style="margin-bottom:16px; padding:12px 16px;">
+                <div class="what-happened-title" style="font-size:12px;"><span style="font-size:14px;">✓</span> What happened?</div>
+                <div class="what-happened-text" id="resume-card-happened" style="font-size:12px;">Letter of Credit drafted by JPMorgan Chase Bank has been issued to advising bank SBI.</div>
+              </div>
+              
+              <div class="what-next-card" style="margin-bottom:20px; padding:12px 16px;">
+                <div class="what-next-title" style="font-size:12px;"><span style="font-size:14px;">⚠</span> What next?</div>
+                <div class="what-next-text" id="resume-card-next" style="font-size:12px;">Verify that the document clauses and cargo dispatch timelines match agreement before accepting the LC draft.</div>
+              </div>
+              
+              <button class="btn btn-primary" id="resume-order-btn" onclick="app.openOrderWorkspace('TRP-123')" style="width:100%; justify-content:center; padding:12px;">
+                <span>Resume Order Workspace &rarr;</span>
+              </button>
+            </div>
+
+            <!-- Needs Attention Table -->
+            <div class="section-container" style="margin-bottom: 0;">
+              <div class="section-header">PENDING ACTION REQUIRED</div>
+              <div class="table-card">
+                <table class="custom-table" id="home-attention-table">
+                  <thead>
+                    <tr>
+                      <th>Order</th>
+                      <th>Buyer</th>
+                      <th>Value</th>
+                      <th>Type</th>
+                      <th>Stage</th>
+                      <th>Action needed</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr class="attention-row" onclick="app.openOrderWorkspace('TRP-123')">
+                      <td><span class="order-link">TRP-123</span></td>
+                      <td>ABC Textiles</td>
+                      <td class="text-bold">$24,500</td>
+                      <td><span class="status-badge purple" style="font-size:9px; padding:2px 8px;">LC</span></td>
+                      <td>Setup</td>
+                      <td class="text-action">Verify JPMorgan Chase LC Draft</td>
+                    </tr>
+                    <tr onclick="app.openOrderWorkspace('TRP-124')">
+                      <td><span class="order-link">TRP-124</span></td>
+                      <td>Muller GmbH</td>
+                      <td class="text-bold">$18,200</td>
+                      <td><span class="status-badge blue" style="font-size:9px; padding:2px 8px;">Advance</span></td>
+                      <td>Payment</td>
+                      <td class="text-action" style="color:var(--primary);">Awaiting buyer wire transfer</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Right Sidebar Area -->
+          <div class="list-card" style="padding:20px; display:flex; flex-direction:column; gap:16px;">
+            <div class="section-header" style="margin-bottom:0;">RECENT ACTIVITY UPDATES</div>
+            <div style="display:flex; flex-direction:column;" id="home-activity-list">
+              <div class="update-item">
+                <div class="update-icon">📝</div>
+                <div class="update-content">
+                  <span class="update-text">Letter of Credit issued for TRP-123 by JPMorgan Chase.</span>
+                  <span class="update-time">3 hours ago</span>
+                </div>
+              </div>
+              <div class="update-item">
+                <div class="update-icon">🚢</div>
+                <div class="update-content">
+                  <span class="update-text">TRP-125 customs shipping bills matching confirmed.</span>
+                  <span class="update-time">1 day ago</span>
+                </div>
+              </div>
+              <div class="update-item">
+                <div class="update-icon">⚙️</div>
+                <div class="update-content">
+                  <span class="update-text">AD Code registered for SBI Jaipur Branch.</span>
+                  <span class="update-time">3 days ago</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-
-        <!-- Start New Order Floating Action Button -->
-        <button class="floating-fab" onclick="app.startNewOrderFlow()">
-          <span>+ Start new order</span>
-        </button>
       </section>
 
-      <!-- ==================== STEP 0: ONBOARDING ==================== -->
-      <section id="panel-step-0" class="view-screen">
+      <!-- ==================== ORDERS TAB view ==================== -->
+      <section id="panel-orders" class="view-screen">
+        <div class="section-container">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <div style="display:flex; gap:8px;">
+              <button class="channel-pill selected" id="orders-filter-active" onclick="app.filterOrdersList('active')">Active Orders</button>
+              <button class="channel-pill" id="orders-filter-completed" onclick="app.filterOrdersList('completed')">Completed & Archived</button>
+            </div>
+            <button class="btn btn-primary" onclick="app.showStartOrderModal()" style="font-size:12px; padding:8px 16px;">
+              <span>+ Start New Order</span>
+            </button>
+          </div>
+
+          <!-- Active Orders List -->
+          <div class="table-card" id="orders-active-container">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Buyer</th>
+                  <th>Value (USD)</th>
+                  <th>Payment Term</th>
+                  <th>Stage</th>
+                  <th>Next Action</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="orders-active-list">
+                <!-- Injected dynamically -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Completed Orders List -->
+          <div class="table-card" id="orders-completed-container" style="display:none;">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Buyer</th>
+                  <th>Value (USD)</th>
+                  <th>Payment Term</th>
+                  <th>Completion Date</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="orders-completed-list">
+                <!-- Injected dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== DOCUMENTS TAB view ==================== -->
+      <section id="panel-documents" class="view-screen">
+        <div class="panel-card" style="padding:24px;">
+          <h3 style="font-size:18px; margin-bottom:8px; font-weight:800;">Consolidated Document Vault</h3>
+          <p class="text-muted" style="font-size:12px; margin-bottom:24px;">Manage compliance invoices, letters of credit, certificates, and carrier dispatch bills of lading across all trade runs.</p>
+          
+          <div class="table-card">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Document Name</th>
+                  <th>Order ID</th>
+                  <th>Type</th>
+                  <th>Uploaded Date</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="documents-list-body">
+                <!-- Injected dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== NOTIFICATIONS TAB view ==================== -->
+      <section id="panel-notifications" class="view-screen">
+        <div class="panel-card" style="padding:24px;">
+          <h3 style="font-size:18px; margin-bottom:16px; font-weight:800;">Activity Alerts & Messages</h3>
+          
+          <div style="display:flex; flex-direction:column; gap:12px;" id="notifications-list-container">
+            <!-- Injected dynamically -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== PROFILE TAB view ==================== -->
+      <section id="panel-profile" class="view-screen">
+        <div class="panel-card" style="padding:24px; margin-bottom:24px;">
+          <h3 style="font-size:18px; margin-bottom:8px; font-weight:800;">Company Settings & Exporter Profiles</h3>
+          <p class="text-muted" style="font-size:12px; margin-bottom:24px;">Configure registration licenses, AD customs codes, and remittance bank details required to reconcile export transactions.</p>
+          
+          <div class="profile-form-grid">
+            <div>
+              <h4 style="font-size:14px; font-weight:800; margin-bottom:12px; color:var(--primary);">Export Credentials</h4>
+              <div style="display:flex; flex-direction:column; gap:12px;">
+                <div>
+                  <label style="display:block; font-size:11px; font-weight:700; color:var(--text-muted); margin-bottom:4px;">Legal Business Name</label>
+                  <input type="text" value="Jaipur Textiles Export" class="onboarding-input" style="padding:8px 12px; width:100%; border:1px solid var(--border-color); border-radius:6px; font-size:13px;" readonly>
+                </div>
+                <div>
+                  <label style="display:block; font-size:11px; font-weight:700; color:var(--text-muted); margin-bottom:4px;">GSTIN Identification</label>
+                  <input type="text" value="08AACTA9876E1Z9" class="onboarding-input" style="padding:8px 12px; width:100%; border:1px solid var(--border-color); border-radius:6px; font-size:13px;" readonly>
+                </div>
+                <div>
+                  <label style="display:block; font-size:11px; font-weight:700; color:var(--text-muted); margin-bottom:4px;">Import Export Code (IEC)</label>
+                  <input type="text" value="0312004561" class="onboarding-input" style="padding:8px 12px; width:100%; border:1px solid var(--border-color); border-radius:6px; font-size:13px;" readonly>
+                </div>
+              </div>
+            </div>
+            
+            <div>
+              <h4 style="font-size:14px; font-weight:800; margin-bottom:12px; color:var(--primary);">Linked Settlement Bank</h4>
+              <div style="display:flex; flex-direction:column; gap:12px;">
+                <div>
+                  <label style="display:block; font-size:11px; font-weight:700; color:var(--text-muted); margin-bottom:4px;">Bank Name</label>
+                  <input type="text" value="State Bank of India (SBI)" class="onboarding-input" style="padding:8px 12px; width:100%; border:1px solid var(--border-color); border-radius:6px; font-size:13px;" readonly>
+                </div>
+                <div>
+                  <label style="display:block; font-size:11px; font-weight:700; color:var(--text-muted); margin-bottom:4px;">Advising Bank AD Code</label>
+                  <input type="text" value="03125678904321" class="onboarding-input" style="padding:8px 12px; width:100%; border:1px solid var(--border-color); border-radius:6px; font-size:13px;" readonly>
+                </div>
+                <div>
+                  <label style="display:block; font-size:11px; font-weight:700; color:var(--text-muted); margin-bottom:4px;">Verification Status</label>
+                  <span class="status-badge green" style="margin-top:2px;">KYC Approved ✓</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-card" style="padding:24px;">
+          <h3 style="font-size:15px; margin-bottom:12px; font-weight:800;">Help Center & TradePe Support</h3>
+          <p class="text-muted" style="font-size:12px; margin-bottom:16px;">Have questions about Letters of Credit compliance checks or Reserve Bank of India reconciliation times? Speak with our trade experts.</p>
+          <button class="btn btn-outline" onclick="app.showToast('Connecting support agent...')" style="padding:8px 16px; font-size:12px;">
+            <span>Contact Support Agent</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- ==================== ONBOARDING WIZARD PANEL ==================== -->
+      <section id="panel-onboarding" class="view-screen">
+        <!-- Onboarding grid matching old step 0, redirects to Home when done -->
         <div class="onboarding-grid">
           <div class="onboarding-sidebar">
             <span class="onboarding-sidebar-title">GETTING STARTED</span>
@@ -314,7 +374,7 @@
             <div class="onboarding-step-screen active" id="onb-screen-welcome">
               <h2 style="font-size:22px; font-family:'Outfit'; font-weight:800; margin-bottom:8px;">Exporter Verification</h2>
               <p class="text-muted" style="font-size:13px; margin-bottom:24px;">Please keep your Aadhaar and PAN documents ready to complete onboarding.</p>
-              <button class="btn btn-orange" onclick="app.changeOnboardingStep('biz-details-form')">Continue Registration</button>
+              <button class="btn btn-orange" onclick="app.changeOnboardingStep('biz-details')">Continue Registration</button>
             </div>
 
             <!-- Details Form -->
@@ -327,12 +387,11 @@
                     <span class="info-trigger" data-tooltip="Official company name matching tax details.">i</span>
                   </div>
                   <input type="text" id="onb-biz-name" class="onboarding-input" value="Jaipur Textiles Export">
-                  <span class="onboarding-error-msg" id="onb-err-biz-name">Name is required.</span>
+                  <span class="onboarding-error-msg" id="onb-err-biz-name" style="display:none;">Name is required.</span>
                 </div>
                 <div class="onboarding-form-group">
                   <div class="onboarding-field-header">
                     <label class="onboarding-form-label" for="onb-biz-entity">Entity Type</label>
-                    <span class="info-trigger" data-tooltip="Legal business registration structure.">i</span>
                   </div>
                   <select id="onb-biz-entity" class="onboarding-input">
                     <option value="LLP">Limited Liability Partnership</option>
@@ -345,14 +404,14 @@
                     <label class="onboarding-form-label" for="onb-biz-incdate">Incorporation Date</label>
                   </div>
                   <input type="date" id="onb-biz-incdate" class="onboarding-input" value="2022-04-12">
-                  <span class="onboarding-error-msg" id="onb-err-biz-incdate">Date is required.</span>
+                  <span class="onboarding-error-msg" id="onb-err-biz-incdate" style="display:none;">Date is required.</span>
                 </div>
                 <div class="onboarding-form-group">
                   <div class="onboarding-field-header">
                     <label class="onboarding-form-label" for="onb-biz-address">Office Address</label>
                   </div>
                   <textarea id="onb-biz-address" class="onboarding-input" style="min-height:60px;">12, Garment Area, Jaipur, Rajasthan, 302001</textarea>
-                  <span class="onboarding-error-msg" id="onb-err-biz-address">Address is required.</span>
+                  <span class="onboarding-error-msg" id="onb-err-biz-address" style="display:none;">Address is required.</span>
                 </div>
                 <button class="btn btn-primary" onclick="app.submitStepBizDetails()">Save & Continue</button>
               </div>
@@ -365,10 +424,9 @@
                 <div class="onboarding-form-group">
                   <div class="onboarding-field-header">
                     <label class="onboarding-form-label" for="onb-biz-pan">Business PAN</label>
-                    <span class="info-trigger" data-tooltip="10-digit tax ID of the company.">i</span>
                   </div>
                   <input type="text" id="onb-biz-pan" class="onboarding-input" style="text-transform:uppercase;" value="AACTA9876E">
-                  <span class="onboarding-error-msg" id="onb-err-biz-pan">Valid 10-char PAN required.</span>
+                  <span class="onboarding-error-msg" id="onb-err-biz-pan" style="display:none;">Valid 10-char PAN required.</span>
                 </div>
                 <div class="onboarding-form-group">
                   <div class="onboarding-field-header">
@@ -379,10 +437,9 @@
                 <div class="onboarding-form-group">
                   <div class="onboarding-field-header">
                     <label class="onboarding-form-label" for="onb-biz-iec">Import Export Code (IEC)</label>
-                    <span class="info-trigger" data-tooltip="Government license required to ship goods overseas.">i</span>
                   </div>
                   <input type="text" id="onb-biz-iec" class="onboarding-input" value="0312004561">
-                  <span class="onboarding-error-msg" id="onb-err-biz-iec">Valid 10-digit IEC code required.</span>
+                  <span class="onboarding-error-msg" id="onb-err-biz-iec" style="display:none;">Valid 10-digit IEC code required.</span>
                 </div>
                 <button class="btn btn-primary" onclick="app.submitStepBizKyc()">Verify KYC Codes</button>
               </div>
@@ -395,17 +452,17 @@
                 <div class="onboarding-form-group">
                   <label class="onboarding-form-label" for="onb-owner-name">Owner Full Name</label>
                   <input type="text" id="onb-owner-name" class="onboarding-input" value="Ankita Sharma">
-                  <span class="onboarding-error-msg" id="onb-err-owner-name">Full Name is required.</span>
+                  <span class="onboarding-error-msg" id="onb-err-owner-name" style="display:none;">Full Name is required.</span>
                 </div>
                 <div class="onboarding-form-group">
                   <label class="onboarding-form-label" for="onb-owner-pan">Personal PAN</label>
                   <input type="text" id="onb-owner-pan" class="onboarding-input" value="BPNPS4567A">
-                  <span class="onboarding-error-msg" id="onb-err-owner-pan">Valid personal PAN required.</span>
+                  <span class="onboarding-error-msg" id="onb-err-owner-pan" style="display:none;">Valid personal PAN required.</span>
                 </div>
                 <div class="onboarding-form-group">
                   <label class="onboarding-form-label" for="onb-owner-aadhaar">Aadhaar Number</label>
                   <input type="text" id="onb-owner-aadhaar" class="onboarding-input" value="9876 5432 1098">
-                  <span class="onboarding-error-msg" id="onb-err-owner-aadhaar">Valid 12-digit Aadhaar required.</span>
+                  <span class="onboarding-error-msg" id="onb-err-owner-aadhaar" style="display:none;">Valid 12-digit Aadhaar required.</span>
                 </div>
                 <button class="btn btn-primary" onclick="app.submitStepOwnerKyc()">Verify Identity</button>
               </div>
@@ -418,25 +475,24 @@
                 <div class="onboarding-form-group">
                   <label class="onboarding-form-label" for="onb-bank-name">Bank Name</label>
                   <input type="text" id="onb-bank-name" class="onboarding-input" value="State Bank of India">
-                  <span class="onboarding-error-msg" id="onb-err-bank-name">Bank Name is required.</span>
+                  <span class="onboarding-error-msg" id="onb-err-bank-name" style="display:none;">Bank Name is required.</span>
                 </div>
                 <div class="onboarding-form-group">
                   <label class="onboarding-form-label" for="onb-bank-acc">Business Account Number</label>
                   <input type="text" id="onb-bank-acc" class="onboarding-input" value="38472910542">
-                  <span class="onboarding-error-msg" id="onb-err-bank-acc">Account number required.</span>
+                  <span class="onboarding-error-msg" id="onb-err-bank-acc" style="display:none;">Account number required.</span>
                 </div>
                 <div class="onboarding-form-group">
                   <label class="onboarding-form-label" for="onb-bank-ifsc">IFSC Routing Code</label>
                   <input type="text" id="onb-bank-ifsc" class="onboarding-input" value="SBIN0004561">
-                  <span class="onboarding-error-msg" id="onb-err-bank-ifsc">Valid IFSC required.</span>
+                  <span class="onboarding-error-msg" id="onb-err-bank-ifsc" style="display:none;">Valid IFSC required.</span>
                 </div>
                 <div class="onboarding-form-group">
                   <div class="onboarding-field-header">
                     <label class="onboarding-form-label" for="onb-bank-adcode">AD Code (Authorized Dealer)</label>
-                    <span class="info-trigger" data-tooltip="A 14-digit bank code registered with customs to link inbound currency to shipping bills.">i</span>
                   </div>
                   <input type="text" id="onb-bank-adcode" class="onboarding-input" value="03125678904321">
-                  <span class="onboarding-error-msg" id="onb-err-bank-adcode">Valid 14-digit AD Code required.</span>
+                  <span class="onboarding-error-msg" id="onb-err-bank-adcode" style="display:none;">Valid 14-digit AD Code required.</span>
                 </div>
                 <button class="btn btn-primary" onclick="app.submitStepRemittance()">Configure Bank</button>
               </div>
@@ -451,14 +507,14 @@
                   <div class="dropzone" id="onb-dropzone-auth" onclick="app.triggerOnbUpload('auth')" style="padding:16px; border-style:dashed;">
                     <span id="onb-file-label-auth">Click to browse authorization_letter.pdf</span>
                   </div>
-                  <span class="onboarding-error-msg" id="onb-err-doc-auth">Authorization Letter is required.</span>
+                  <span class="onboarding-error-msg" id="onb-err-doc-auth" style="display:none;">Authorization Letter is required.</span>
                 </div>
                 <div>
                   <label class="onboarding-form-label" style="display:block; margin-bottom:6px;">Office Address Proof</label>
                   <div class="dropzone" id="onb-dropzone-addr" onclick="app.triggerOnbUpload('addr')" style="padding:16px; border-style:dashed;">
                     <span id="onb-file-label-addr">Click to browse electricity_bill.pdf</span>
                   </div>
-                  <span class="onboarding-error-msg" id="onb-err-doc-addr">Address proof is required.</span>
+                  <span class="onboarding-error-msg" id="onb-err-doc-addr" style="display:none;">Address proof is required.</span>
                 </div>
                 <button class="btn btn-primary" onclick="app.submitStepAddlDocs()">Verify Documents</button>
                 <input type="file" id="onb-file-input" style="display:none;" onchange="app.handleOnbFileSelect(event)">
@@ -499,416 +555,99 @@
         </div>
       </section>
 
-      <!-- ==================== STEP 1: PAYMENT DECISION ==================== -->
-      <section id="panel-step-1" class="view-screen">
-        <div class="panel-card" style="margin-bottom: 24px; padding: 24px;">
-          <h3 style="font-size:18px; font-family:'Outfit'; font-weight:800; margin-bottom:6px;">Agreement Terms for Order #TRP-123</h3>
-          <p class="text-muted" style="font-size:12px; margin-bottom:20px;">Review and select the payment security term for your $24,500 cotton fabrics export contract with <strong>ABC Textiles</strong> (New Buyer).</p>
-
-          <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:20px; margin-bottom:24px;">
-            <!-- Option 1 -->
-            <div class="panel-card" style="padding:20px; cursor:pointer; border:2px solid var(--border-color); border-radius:12px; display:flex; flex-direction:column; justify-content:space-between;" onclick="app.selectPaymentTerm('advance')">
-              <div>
-                <h4 style="font-size:15px; font-weight:800; margin:0 0 6px 0; color:var(--text-main);">1. Advance Payment</h4>
-                <p class="text-muted" style="font-size:11px; line-height:1.4; margin:0 0 12px 0;">Buyer pays full USD 24,500 wire transfer before production or shipment.</p>
-              </div>
-              <div style="margin-top:12px;">
-                <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:6px;"><span class="text-muted">Exporter Risk:</span><span class="text-bold" style="color:var(--success);">Very Low</span></div>
-                <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:6px;"><span class="text-muted">Buyer Risk:</span><span class="text-bold" style="color:var(--danger);">Very High</span></div>
-                <div style="display:flex; justify-content:space-between; font-size:11px;"><span class="text-muted">Buyer Trust:</span><span class="text-bold">Rejected (New Partner)</span></div>
-              </div>
-            </div>
-            <!-- Option 2 -->
-            <div class="panel-card" id="term-card-lc" style="padding:20px; cursor:pointer; border:2px solid var(--primary); background-color:var(--primary-light-bg); border-radius:12px; display:flex; flex-direction:column; justify-content:space-between;" onclick="app.selectPaymentTerm('lc')">
-              <div>
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                  <h4 style="font-size:15px; font-weight:800; margin:0; color:var(--primary);">2. Letter of Credit (LC)</h4>
-                  <span class="status-badge green" style="font-size:9px;">Recommended</span>
-                </div>
-                <p class="text-muted" style="font-size:11px; line-height:1.4; margin:0 0 12px 0;">JPMorgan Chase Bank guarantees payment, released after document validation.</p>
-              </div>
-              <div style="margin-top:12px;">
-                <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:6px;"><span class="text-muted">Exporter Risk:</span><span class="text-bold" style="color:var(--success);">Low (Bank backed)</span></div>
-                <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:6px;"><span class="text-muted">Buyer Risk:</span><span class="text-bold" style="color:var(--success);">Low (Doc verified)</span></div>
-                <div style="display:flex; justify-content:space-between; font-size:11px;"><span class="text-muted">Verdict:</span><span class="text-bold" style="color:var(--primary);">Safe & mutually agreed</span></div>
-              </div>
-            </div>
-            <!-- Option 3 -->
-            <div class="panel-card" style="padding:20px; cursor:pointer; border:2px solid var(--border-color); border-radius:12px; display:flex; flex-direction:column; justify-content:space-between;" onclick="app.selectPaymentTerm('open')">
-              <div>
-                <h4 style="font-size:15px; font-weight:800; margin:0 0 6px 0; color:var(--text-main);">3. Open Account</h4>
-                <p class="text-muted" style="font-size:11px; line-height:1.4; margin:0 0 12px 0;">Ship fabrics first, buyer transfers payment 60 days after receipt.</p>
-              </div>
-              <div style="margin-top:12px;">
-                <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:6px;"><span class="text-muted">Exporter Risk:</span><span class="text-bold" style="color:var(--danger);">Very High</span></div>
-                <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:6px;"><span class="text-muted">Buyer Risk:</span><span class="text-bold" style="color:var(--success);">Very Low</span></div>
-                <div style="display:flex; justify-content:space-between; font-size:11px;"><span class="text-muted">Verdict:</span><span class="text-bold">Exporter rejected</span></div>
-              </div>
+      <!-- ==================== ORDER LIFECYCLE WORKSPACE ==================== -->
+      <section id="panel-order-workspace" class="view-screen">
+        <!-- Order Header Summary Banner -->
+        <div class="workspace-banner" id="workspace-banner-el">
+          <div class="workspace-banner-info">
+            <h3 id="workspace-title-text">TRP-123 · ABC Textiles</h3>
+            <div class="workspace-banner-meta">
+              <span><strong>Buyer:</strong> ABC Textiles, USA</span>
+              <span><strong>Order Value:</strong> $24,500.00 USD</span>
+              <span><strong>Payment Term:</strong> Irrevocable Letter of Credit</span>
             </div>
           </div>
-
-          <div style="background:hsl(var(--primary-hue), var(--primary-sat), 98%); border:1px solid hsl(var(--primary-hue), var(--primary-sat), 90%); border-radius:8px; padding:16px; margin-bottom:20px; font-size:12px; line-height:1.5;">
-            <strong>Why use a Letter of Credit (LC)?</strong> In export trade, since buyer and exporter reside in different countries with no prior relationship, banks act as neutral third-party trustees. The buyer's bank guarantees payment to the exporter, protecting you against buyer defaults, while protecting the buyer from paying until physical dispatch proof (Bill of Lading) is audited.
+          <div class="workspace-banner-status">
+            <span>CURRENT STATUS</span>
+            <strong id="workspace-status-badge-text">LC Audit Pending</strong>
           </div>
-
-          <button class="btn btn-primary" onclick="app.confirmPaymentTerm()" style="width:100%; justify-content:center; padding:12px;">Confirm Letter of Credit Agreement &rarr;</button>
         </div>
-      </section>
 
-      <!-- ==================== STEP 2: BANK LC VERIFICATION ==================== -->
-      <section id="panel-step-2" class="view-screen">
-        <div class="panel-card" style="margin-bottom: 24px; padding: 24px;">
-          <h3 style="font-size:18px; font-family:'Outfit'; font-weight:800; margin-bottom:4px;">Audit Bank Letter of Credit (LC)</h3>
-          <p class="text-muted" style="font-size:12px; margin-bottom:20px;">The buyer's bank (JPMorgan Chase) has issued a digital LC. Verify that the conditions match your agreement exactly to prevent payment blocks.</p>
+        <!-- Horizontal Sub-Tabs -->
+        <div class="workspace-subtabs">
+          <div class="subtab-item active" id="subtab-overview" onclick="app.switchSubTab('overview')">Overview</div>
+          <div class="subtab-item" id="subtab-timeline" onclick="app.switchSubTab('timeline')">Setup & Status</div>
+          <div class="subtab-item" id="subtab-documents" onclick="app.switchSubTab('documents')">Documents</div>
+          <div class="subtab-item" id="subtab-payment" onclick="app.switchSubTab('payment')">FX & Settlement</div>
+          <div class="subtab-item" id="subtab-close" onclick="app.switchSubTab('close')">Customs Reconciliation</div>
+        </div>
 
-          <div style="display:grid; grid-template-columns: 1.2fr 0.8fr; gap:24px;">
-            <!-- LC Certificate view -->
-            <div style="border: 2px dashed #94a3b8; border-radius:12px; padding:24px; font-family:'Courier New', monospace; font-size:12px; background:#f8fafc; line-height:1.6; color:#0f172a; box-shadow:inset 0 2px 4px rgba(0,0,0,0.05);">
-              <div style="text-align:center; border-bottom:2px solid #0f172a; padding-bottom:12px; margin-bottom:12px;">
-                <h4 style="margin:0 0 4px 0; font-size:14px; font-weight:bold;">IRREVOCABLE DOCUMENTARY LETTER OF CREDIT</h4>
-                <span>JPMORGAN CHASE BANK, N.A. · DOCUMENTARY CREDITS DEPT</span>
+        <!-- Sub-Tab Panels -->
+        <!-- 1. OVERVIEW (Anchor Screen) -->
+        <div class="workspace-subpanel active" id="workspace-panel-overview">
+          <div class="detail-grid">
+            <div>
+              <div class="what-happened-card">
+                <div class="what-happened-title">
+                  <span>ℹ️</span> What happened?
+                </div>
+                <div class="what-happened-text" id="overview-what-happened">
+                  Irrevocable LC drafted by JPMorgan Chase Bank has been issued to advising bank SBI.
+                </div>
               </div>
-              <div><strong>LC NO:</strong> LCCN-2026-0897</div>
-              <div><strong>DATE OF ISSUE:</strong> 24 MAY 2026</div>
-              <div><strong>APPLICANT:</strong> ABC TEXTILES INC, 100 BROADWAY, NEW YORK, NY</div>
-              <div><strong>BENEFICIARY:</strong> JAIPUR TEXTILES EXPORT, JAIPUR, RAJASTHAN, INDIA</div>
-              <div><strong>ADVISING BANK:</strong> STATE BANK OF INDIA, JAIPUR, INDIA</div>
-              <div><strong>AMOUNT:</strong> USD 24,500.00 (TWENTY-FOUR THOUSAND FIVE HUNDRED USD)</div>
-              <div><strong>EXPIRY:</strong> 30 JUNE 2026 IN EXPORTING COUNTRY</div>
-              <div><strong>SHIPMENT OF:</strong> 100% COTTON WOVEN FABRICS (GREIGE FINISH)</div>
-              <div><strong>PORT OF DISPATCH:</strong> MUMBAI PORT, INDIA</div>
-              <div><strong>PORT OF ENTRY:</strong> NEW YORK PORT, USA</div>
-              <div style="border-top:1px solid #cbd5e1; margin-top:12px; padding-top:12px;">
-                <strong>DOCUMENTS REQUIRED:</strong><br>
-                1. SIGNED COMMERCIAL INVOICE IN 3 COPIES.<br>
-                2. PACKING LIST IN 2 COPIES.<br>
-                3. CERTIFICATE OF ORIGIN (FORM A) ISSUED BY EXPORT COUNCILS.<br>
-                4. FULL SET OF CLEAN ON-BOARD BILL OF LADING CONSIGNED TO ORDER.
+
+              <div class="what-next-card">
+                <div class="what-next-title">
+                  <span>👉</span> What next?
+                </div>
+                <div class="what-next-text" id="overview-what-next">
+                  Exporter needs to audit document requirements and expiry parameters to prevent payment discrepancies.
+                </div>
+              </div>
+
+              <div class="panel-card" style="padding:20px; display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                  <h4 style="font-size:14px; font-weight:800; margin:0 0 4px 0;">Exporter Checklist Checklist</h4>
+                  <p class="text-muted" style="font-size:11px; margin:0;">Make sure parameters match before executing work.</p>
+                </div>
+                <button class="btn btn-primary" id="overview-continue-cta" onclick="app.switchSubTab('timeline')">
+                  <span>Continue Flow &rarr;</span>
+                </button>
               </div>
             </div>
 
-            <!-- Discrepancy Audit list -->
-            <div style="display:flex; flex-direction:column; gap:16px;">
-              <h4 style="font-size:13px; font-weight:800; margin:0; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted);">LC Compliance Audit Checklist</h4>
-              
-              <div style="display:flex; flex-direction:column; gap:12px;">
-                <label style="display:flex; align-items:flex-start; gap:10px; font-size:12px; cursor:pointer;">
-                  <input type="checkbox" id="lc-check-1" style="margin-top:2px;" onchange="app.checkLcItems()">
-                  <span><strong>Beneficiary details</strong> matches company details (Jaipur Textiles Export) exactly.</span>
-                </label>
-                <label style="display:flex; align-items:flex-start; gap:10px; font-size:12px; cursor:pointer;">
-                  <input type="checkbox" id="lc-check-2" style="margin-top:2px;" onchange="app.checkLcItems()">
-                  <span><strong>LC Expiry Date</strong> (30 June 2026) gives enough buffer to manufacture and ship physical goods.</span>
-                </label>
-                <label style="display:flex; align-items:flex-start; gap:10px; font-size:12px; cursor:pointer;">
-                  <input type="checkbox" id="lc-check-3" style="margin-top:2px;" onchange="app.checkLcItems()">
-                  <span><strong>Document criteria</strong> are standard and achievable (Commercial Invoice, Packing List, Certificate of Origin, BL).</span>
-                </label>
-                <label style="display:flex; align-items:flex-start; gap:10px; font-size:12px; cursor:pointer;">
-                  <input type="checkbox" id="lc-check-4" style="margin-top:2px;" onchange="app.checkLcItems()">
-                  <span><strong>Financial terms</strong> (USD 24,500.00) match the purchase order agreement.</span>
-                </label>
-              </div>
-
-              <div style="margin-top:auto; padding-top:20px; border-top:1px solid var(--border-color);">
-                <button class="btn btn-primary" id="lc-accept-btn" onclick="app.acceptLcDraft()" style="width:100%; justify-content:center;" disabled>Verify & Accept LC Terms &rarr;</button>
-              </div>
+            <div class="list-card" style="padding:20px;">
+              <h4 class="panel-card-title" style="margin-bottom:12px;">ORDER SPECIFICATIONS</h4>
+              <div class="preview-row"><span class="preview-label">Buyer Company</span><span class="preview-value" id="spec-buyer-company">ABC Textiles Inc</span></div>
+              <div class="preview-row"><span class="preview-label">Contract Amount</span><span class="preview-value text-bold" id="spec-contract-amount">$24,500.00 USD</span></div>
+              <div class="preview-row"><span class="preview-label">Goods Description</span><span class="preview-value" id="spec-goods-description">Cotton Woven Fabrics (Greige)</span></div>
+              <div class="preview-row"><span class="preview-label">Payment Security</span><span class="preview-value" id="spec-payment-security">Letter of Credit (LC)</span></div>
+              <div class="preview-row"><span class="preview-label">Exporter AD Code</span><span class="preview-value">SBI Noida (03125678)</span></div>
             </div>
           </div>
         </div>
-      </section>
 
-      <!-- ==================== STEP 3: DOCUMENT PREPARATION ==================== -->
-      <section id="panel-step-3" class="view-screen">
-        <div class="panel-card" style="margin-bottom: 24px; padding: 24px;">
-          <h3 style="font-size:18px; font-family:'Outfit'; font-weight:800; margin-bottom:4px;">Upload Settlement Documents</h3>
-          <p class="text-muted" style="font-size:12px; margin-bottom:20px;">Upload verified document formats. These will be forwarded directly to your bank (SBI) for payment collection under the LC.</p>
-
-          <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:20px; margin-bottom:24px;">
-            <!-- Doc 1: Commercial Invoice -->
-            <div class="panel-card" id="doc-card-invoice" style="padding:20px; border:1px solid var(--border-color); border-radius:12px; display:flex; flex-direction:column; justify-content:space-between; transition: all 0.3s ease;">
-              <div>
-                <div style="display:flex; justify-content:space-between; margin-bottom:8px; align-items:center;">
-                  <span style="font-size:18px;">📄</span>
-                  <span class="status-badge orange" id="doc-badge-invoice">Pending</span>
-                </div>
-                <h4 style="font-size:14px; font-weight:700; margin:0 0 4px 0; color:var(--text-main);">Commercial Invoice</h4>
-                <p class="text-muted" style="font-size:11px; line-height:1.4; margin:0;">Detailed ledger billing ABC Textiles for greige woven fabrics.</p>
-              </div>
-              <button class="btn btn-outline btn-sm" id="doc-upload-btn-invoice" onclick="app.uploadTradeDoc('invoice')" style="margin-top:16px; width:100%; justify-content:center;">Upload Invoice</button>
-            </div>
-            <!-- Doc 2: Packing List -->
-            <div class="panel-card" id="doc-card-packing" style="padding:20px; border:1px solid var(--border-color); border-radius:12px; display:flex; flex-direction:column; justify-content:space-between; transition: all 0.3s ease;">
-              <div>
-                <div style="display:flex; justify-content:space-between; margin-bottom:8px; align-items:center;">
-                  <span style="font-size:18px;">📦</span>
-                  <span class="status-badge orange" id="doc-badge-packing">Pending</span>
-                </div>
-                <h4 style="font-size:14px; font-weight:700; margin:0 0 4px 0; color:var(--text-main);">Packing List</h4>
-                <p class="text-muted" style="font-size:11px; line-height:1.4; margin:0;">Specifies dimensions, weights, and quantity breakdown of packed fabric rolls.</p>
-              </div>
-              <button class="btn btn-outline btn-sm" id="doc-upload-btn-packing" onclick="app.uploadTradeDoc('packing')" style="margin-top:16px; width:100%; justify-content:center;">Upload Packing List</button>
-            </div>
-            <!-- Doc 3: Certificate of Origin -->
-            <div class="panel-card" id="doc-card-origin" style="padding:20px; border:1px solid var(--border-color); border-radius:12px; display:flex; flex-direction:column; justify-content:space-between; transition: all 0.3s ease;">
-              <div>
-                <div style="display:flex; justify-content:space-between; margin-bottom:8px; align-items:center;">
-                  <span style="font-size:18px;">🗺️</span>
-                  <span class="status-badge orange" id="doc-badge-origin">Pending</span>
-                </div>
-                <h4 style="font-size:14px; font-weight:700; margin:0 0 4px 0; color:var(--text-main);">Certificate of Origin</h4>
-                <p class="text-muted" style="font-size:11px; line-height:1.4; margin:0;">Certifies physical Indian source, required to claim preferential import tariffs.</p>
-              </div>
-              <button class="btn btn-outline btn-sm" id="doc-upload-btn-origin" onclick="app.uploadTradeDoc('origin')" style="margin-top:16px; width:100%; justify-content:center;">Upload Certificate</button>
-            </div>
-          </div>
-
-          <div class="alert-banner success" id="docs-complete-banner" style="display:none; margin-bottom:20px; border-radius:8px;">
-            <div class="alert-message-container">
-              <span class="alert-title">All 3 primary shipping documents verified!</span>
-              <span class="alert-desc">Your paperwork matches the Bank LC specs. You can now dispatch shipment.</span>
-            </div>
-          </div>
-
-          <button class="btn btn-primary" id="docs-continue-btn" onclick="app.confirmDocUploads()" style="width:100%; justify-content:center; padding:12px;" disabled>Proceed to Dispatch Shipment &rarr;</button>
+        <!-- 2. TIMELINE (Setup / Agreement) -->
+        <div class="workspace-subpanel" id="workspace-panel-timeline">
+          <!-- Timelines are flow-specific and rendered dynamically in JS -->
+          <div id="timeline-flow-container"></div>
         </div>
-      </section>
 
-      <!-- ==================== STEP 4: SHIPMENT & BILL OF LADING ==================== -->
-      <section id="panel-step-4" class="view-screen">
-        <div class="panel-card" style="margin-bottom: 24px; padding: 24px;">
-          <h3 style="font-size:18px; font-family:'Outfit'; font-weight:800; margin-bottom:4px;">Shipment Dispatched & Cargo Transit</h3>
-          <p class="text-muted" style="font-size:12px; margin-bottom:20px;">Your containers are loaded. Once cargo is on-board, upload the carrier Bill of Lading (BL) as proof of transit for bank collection.</p>
-
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px; margin-bottom:20px;">
-            <!-- Transit status map details -->
-            <div style="border: 1px solid var(--border-color); border-radius:12px; padding:20px; background:#fff;">
-              <h4 style="font-size:14px; font-weight:800; margin:0 0 16px 0; color:var(--text-main);">Shipment Status: In Transit</h4>
-              
-              <div style="display:flex; flex-direction:column; gap:16px;">
-                <div style="display:flex; align-items:center; gap:12px;">
-                  <span style="font-size:24px;">🚢</span>
-                  <div>
-                    <div style="font-weight:700; font-size:13px; color:var(--text-main);">Vessel: Maersk Rajasthan</div>
-                    <span style="font-size:11px; color:var(--text-muted);">Route: Mumbai Port (IN) &rarr; New York Port (US)</span>
-                  </div>
-                </div>
-                
-                <div style="display:flex; flex-direction:column; gap:8px; border-left:2px solid var(--primary); padding-left:16px; margin-left:10px; font-size:11px;">
-                  <div><strong style="color:var(--primary);">Container Loaded:</strong> Mumbai customs cleared and sealed.</div>
-                  <div><strong style="color:var(--success);">Vessel Departed:</strong> Cargo physical transit initiated.</div>
-                  <div><strong style="color:var(--text-muted);">Estimated Entry:</strong> 18 June 2026.</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Upload Bill of Lading -->
-            <div class="panel-card" id="doc-card-bl" style="border:1px solid var(--border-color); border-radius:12px; padding:20px; display:flex; flex-direction:column; justify-content:space-between; transition: all 0.3s ease;">
-              <div>
-                <div style="display:flex; justify-content:space-between; margin-bottom:8px; align-items:center;">
-                  <h4 style="font-size:14px; font-weight:700; margin:0; color:var(--text-main);">Carrier Bill of Lading (BL)</h4>
-                  <span class="status-badge orange" id="doc-badge-bl">Pending Upload</span>
-                </div>
-                <p class="text-muted" style="font-size:11px; line-height:1.4; margin:8px 0 0 0;">Issued by Maersk Line acknowledging container cargo loading. Required by LC trustee bank to release foreign exchange wire.</p>
-              </div>
-              <button class="btn btn-outline" id="doc-upload-btn-bl" onclick="app.uploadTradeDoc('bl')" style="margin-top:16px; width:100%; justify-content:center;">Upload Bill of Lading</button>
-            </div>
-          </div>
-
-          <div class="alert-banner success" id="bl-complete-banner" style="display:none; margin-bottom:20px; border-radius:8px;">
-            <div class="alert-message-container">
-              <span class="alert-title">Carrier Bill of Lading uploaded successfully!</span>
-              <span class="alert-desc">Proof of transit is locked. You are ready to present files to bank collection.</span>
-            </div>
-          </div>
-
-          <button class="btn btn-primary" id="bl-continue-btn" onclick="app.confirmShipmentBl()" style="width:100%; justify-content:center; padding:12px;" disabled>Submit Documents to SBI for Audit &rarr;</button>
+        <!-- 3. DOCUMENTS -->
+        <div class="workspace-subpanel" id="workspace-panel-documents">
+          <div id="documents-flow-container"></div>
         </div>
-      </section>
 
-      <!-- ==================== STEP 5: DOCUMENT SUBMISSION & BANK RELEASE ==================== -->
-      <section id="panel-step-5" class="view-screen">
-        <div class="panel-card" style="margin-bottom: 24px; padding: 24px;">
-          <h3 style="font-size:18px; font-family:'Outfit'; font-weight:800; margin-bottom:4px;">Document Drawer Banking Audit</h3>
-          <p class="text-muted" style="font-size:12px; margin-bottom:20px;">State Bank of India is auditing document matches against JPMorgan Chase LC stipulations. Payment will be cleared on matching validation.</p>
-
-          <div style="display:grid; grid-template-columns: 1.2fr 0.8fr; gap:24px; margin-bottom:20px;">
-            <!-- Live Audit Logs -->
-            <div style="border: 1px solid var(--border-color); border-radius:12px; padding:20px; background:#fff;">
-              <h4 style="font-size:14px; font-weight:800; margin:0 0 16px 0; color:var(--text-main);">Compliance Audit Ledger</h4>
-              
-              <div style="display:flex; flex-direction:column; gap:12px; font-size:12px;" id="bank-audit-ledger">
-                <div style="display:flex; justify-content:space-between; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
-                  <span style="color:var(--text-muted);">Auditing Commercial Invoice details...</span>
-                  <span style="font-weight:700; color:var(--success);">MATCHED ✓</span>
-                </div>
-                <div style="display:flex; justify-content:space-between; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
-                  <span style="color:var(--text-muted);">Auditing Packing List weights...</span>
-                  <span style="font-weight:700; color:var(--success);">MATCHED ✓</span>
-                </div>
-                <div style="display:flex; justify-content:space-between; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
-                  <span style="color:var(--text-muted);">Auditing Certificate of Origin rules...</span>
-                  <span style="font-weight:700; color:var(--success);">MATCHED ✓</span>
-                </div>
-                <div style="display:flex; justify-content:space-between; border-bottom:1px solid #f1f5f9; padding-bottom:8px;" id="audit-row-bl">
-                  <span style="color:var(--text-muted);">Auditing Bill of Lading shipping dates...</span>
-                  <span style="font-weight:700; color:var(--orange);" id="audit-status-bl">AUDITING...</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Released Wallet state preview -->
-            <div style="display:flex; flex-direction:column; gap:16px;">
-              <div class="panel-card blue" style="padding:24px; text-align:center; box-shadow: var(--shadow-sm); flex-grow:1; display:flex; flex-direction:column; justify-content:center; align-items:center; border:1px solid hsl(var(--primary-hue), var(--primary-sat), 88%); background:var(--primary-light-bg);">
-                <span class="text-muted" style="font-size:11px; text-transform:uppercase; font-weight:800; letter-spacing:0.05em;">Released Funds held</span>
-                <h3 style="font-size:32px; font-family:'Outfit'; font-weight:900; color:var(--primary); margin:8px 0;" id="bank-released-amt">$0.00</h3>
-                <span class="status-badge orange" id="bank-released-status" style="font-size:10px;">Pending verification</span>
-              </div>
-            </div>
-          </div>
-
-          <button class="btn btn-primary" id="bank-audit-btn" onclick="app.startBankAudit()" style="width:100%; justify-content:center; padding:12px;">Trigger SBI Bank Document Audit &rarr;</button>
-          <button class="btn btn-success" id="bank-continue-btn" onclick="app.confirmBankClearance()" style="width:100%; justify-content:center; padding:12px; display:none;">Proceed to Currency Conversion &rarr;</button>
+        <!-- 4. PAYMENT (FX) -->
+        <div class="workspace-subpanel" id="workspace-panel-payment">
+          <div id="payment-flow-container"></div>
         </div>
-      </section>
 
-      <!-- ==================== STEP 6: FX CONVERSION ==================== -->
-      <section id="panel-step-6" class="view-screen">
-        <div class="panel-card" style="margin-bottom: 24px; padding: 24px;">
-          <!-- Dynamic Banners (Unconverted vs Converted) -->
-          <div class="alert-banner warning" id="received-banner-unconverted" style="margin-bottom:20px; border-radius:8px;">
-            <div class="alert-message-container">
-              <span class="alert-title">Payment Cleared in USD · Held in Multi-Currency Wallet</span>
-              <span class="alert-desc">Bank has released USD 24,500. Execute manual FX conversion to credit your SBI Rupee account.</span>
-            </div>
-          </div>
-          <div class="alert-banner success" id="received-banner-converted" style="display:none; margin-bottom:20px; border-radius:8px;">
-            <div class="alert-message-container">
-              <span class="alert-title">FX Conversion Completed · ₹20,43,790 Credited</span>
-              <span class="alert-desc">Converted at live rate ₹83.42. Settlement credits transferred to your SBI account.</span>
-            </div>
-          </div>
-
-          <!-- Summary Stats -->
-          <div class="summary-cards-grid" style="margin-bottom:24px;">
-            <div class="stat-card blue" style="box-shadow: var(--shadow-sm);">
-              <span class="stat-value">$24,500</span>
-              <span class="stat-label">Wallet Balance</span>
-              <span class="stat-desc">USD held in secure vault</span>
-            </div>
-            <div class="stat-card orange" id="received-stat-inr-card" style="box-shadow: var(--shadow-sm);">
-              <span class="stat-value" id="received-stat-inr-val" style="font-size:24px;">Pending</span>
-              <span class="stat-label">You Receive (INR)</span>
-              <span class="stat-desc" id="received-stat-inr-desc">Awaiting FX request</span>
-            </div>
-            <div class="stat-card green" style="box-shadow: var(--shadow-sm);">
-              <span class="stat-value" style="font-size:24px;">₹32,340</span>
-              <span class="stat-label">TradePe Savings</span>
-              <span class="stat-desc">vs traditional bank rates</span>
-            </div>
-          </div>
-
-          <!-- FX Card Widget -->
-          <div class="panel-card" style="padding:24px; max-width:600px; margin:0 auto;" id="received-fx-conversion-panel">
-            <div id="fx-conv-state-unconverted">
-              <h4 style="font-size:15px; font-weight:800; margin:0 0 6px 0; color:var(--text-main);">Manual FX Conversion</h4>
-              <p class="text-muted" style="font-size:12px; margin-bottom:16px;">TradePe holds funds in USD so you can choose the timing to convert. Click to convert your holdings at the current rate.</p>
-              
-              <div style="background:var(--primary-light-bg); border-radius:8px; padding:16px; margin-bottom:16px; border:1px solid hsl(var(--primary-hue), var(--primary-sat), 88%); font-size:12px;">
-                <div style="display:flex; justify-content:space-between; margin-bottom:8px;"><span class="text-muted">Live exchange rate:</span><span class="text-bold" style="color:var(--primary);">1 USD = ₹83.42</span></div>
-                <div style="display:flex; justify-content:space-between; margin-bottom:8px;"><span class="text-muted">Conversion yield:</span><span class="text-bold">₹20,43,790</span></div>
-                <div style="display:flex; justify-content:space-between;"><span class="text-muted">Est. Savings:</span><span class="text-bold" style="color:var(--success);">₹32,340</span></div>
-              </div>
-
-              <button class="btn btn-primary" id="execute-conv-btn" onclick="app.executeFxConversion()" style="width:100%; justify-content:center; padding:12px; font-weight:700;">Convert USD 24,500 to INR now &rarr;</button>
-            </div>
-
-            <div id="fx-conv-state-converted" style="display:none; text-align:center;">
-              <h4 style="font-size:15px; font-weight:800; margin:0 0 6px 0; color:var(--success);">Conversion complete!</h4>
-              <div class="status-badge green" style="font-size:12px; padding:8px 16px; margin:12px 0;">₹20,43,790 Credited ✓</div>
-              <p class="text-muted" style="font-size:12px; line-height:1.4; margin-bottom:20px;">Funds successfully sent to State Bank of India Account ending <strong>...0542</strong>.</p>
-              <button class="btn btn-success" onclick="app.confirmFxConversion()" style="width:100%; justify-content:center; padding:12px;">Proceed to Settlement &rarr;</button>
-            </div>
-          </div>
+        <!-- 5. CLOSE (Customs) -->
+        <div class="workspace-subpanel" id="workspace-panel-close">
+          <div id="close-flow-container"></div>
         </div>
-      </section>
 
-      <!-- ==================== STEP 7: SETTLE & CLOSE ==================== -->
-      <section id="panel-step-7" class="view-screen">
-        <div class="panel-card" style="margin-bottom: 24px; padding: 24px;">
-          <h3 style="font-size:18px; font-family:'Outfit'; font-weight:800; margin-bottom:4px;">Reconcile & Close Order</h3>
-          <p class="text-muted" style="font-size:12px; margin-bottom:20px;">Match banking credit against custom shipping bill records to complete RBI compliance logs.</p>
-
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px; margin-bottom:24px;">
-            <!-- Compliance check status -->
-            <div style="border: 1px solid var(--border-color); border-radius:12px; padding:20px; background:#fff;">
-              <h4 style="font-size:14px; font-weight:800; margin:0 0 16px 0; color:var(--text-main);">RBI IDPMS Reconciliation</h4>
-              
-              <div style="display:flex; flex-direction:column; gap:12px; font-size:12px;">
-                <div style="display:flex; justify-content:space-between; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
-                  <span style="color:var(--text-muted);">AD Code Registration:</span>
-                  <span style="font-weight:700; color:var(--success);">SBI Noida registered ✓</span>
-                </div>
-                <div style="display:flex; justify-content:space-between; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
-                  <span style="color:var(--text-muted);">Inward Remittance Message (IRM):</span>
-                  <span style="font-weight:700; color:var(--success);">RBI logged ✓</span>
-                </div>
-                <div style="display:flex; justify-content:space-between; border-bottom:1px solid #f1f5f9; padding-bottom:8px;">
-                  <span style="color:var(--text-muted);">Shipping Bill Matching:</span>
-                  <span style="font-weight:700; color:var(--success);">Cleared (0 discrepancies) ✓</span>
-                </div>
-                <div style="display:flex; justify-content:space-between; padding-bottom:4px;">
-                  <span style="color:var(--text-muted);">Customs Audit Status:</span>
-                  <span style="font-weight:700; color:var(--success);">Fully Reconciled ✓</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Buyer memory log updates -->
-            <div style="border: 1px solid var(--border-color); border-radius:12px; padding:20px; background:hsl(var(--primary-hue), 90%, 98.5%); border-color: hsl(var(--primary-hue), 90%, 93%);">
-              <h4 style="font-size:14px; font-weight:800; margin:0 0 12px 0; color:var(--primary);">Buyer Memory Log Updated</h4>
-              <h3 style="font-size: 16px; margin:0 0 10px 0; color: var(--sidebar-bg); font-weight:800;">ABC Textiles</h3>
-              
-              <ul style="list-style: none; display:flex; flex-direction:column; gap:8px; font-size:12px; color:var(--text-main); padding:0; margin:0;">
-                <li style="display:flex; align-items:center; gap:8px;"><span style="color:var(--primary); font-weight:800;">•</span> Buyer reliability score updated: Excellent</li>
-                <li style="display:flex; align-items:center; gap:8px;"><span style="color:var(--primary); font-weight:800;">•</span> Average clearance speed: 10 days</li>
-                <li style="display:flex; align-items:center; gap:8px;"><span style="color:var(--primary); font-weight:800;">•</span> Prefilled for next transactions</li>
-              </ul>
-            </div>
-          </div>
-
-          <button class="btn btn-success" onclick="app.closeOrder()" style="width:100%; justify-content:center; padding:12px; font-weight:700;">Mark Order Settled & Archived ✓</button>
-        </div>
-      </section>
-
-      <!-- ==================== FINAL COMPLETE PANEL ==================== -->
-      <section id="panel-step-complete" class="view-screen">
-        <div class="panel-card" style="padding:40px; text-align:center; max-width:640px; margin:0 auto; border-radius:16px;">
-          <div style="font-size:64px; margin-bottom:16px;">🏆</div>
-          <h2 style="font-size:24px; font-family:'Outfit'; font-weight:900; color:var(--sidebar-bg); margin:0 0 8px 0;">Congratulations, Ankita!</h2>
-          <p class="text-muted" style="font-size:13px; line-height:1.5; margin-bottom:32px;">You have successfully navigated the Letter of Credit (LC) trade lifecycle, avoiding currency conversions losses and ensuring 100% compliant remittance settlement.</p>
-
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; text-align:left; margin-bottom:32px; border-top:1px solid var(--border-color); border-bottom:1px solid var(--border-color); padding:24px 0;">
-            <div style="display:flex; flex-direction:column; gap:4px;">
-              <span class="profile-label" style="font-size:10px;">Total Funds Settled</span>
-              <span style="font-size:18px; font-weight:800; color:var(--success);">₹20,43,790</span>
-            </div>
-            <div style="display:flex; flex-direction:column; gap:4px;">
-              <span class="profile-label" style="font-size:10px;">Exchange Savings</span>
-              <span style="font-size:18px; font-weight:800; color:var(--primary);">₹32,340</span>
-            </div>
-            <div style="display:flex; flex-direction:column; gap:4px; margin-top:12px;">
-              <span class="profile-label" style="font-size:10px;">Remittance Audit</span>
-              <span style="font-size:13px; font-weight:700; color:var(--text-main);">RBI IDPMS Cleared</span>
-            </div>
-            <div style="display:flex; flex-direction:column; gap:4px; margin-top:12px;">
-              <span class="profile-label" style="font-size:10px;">Risk Exposure</span>
-              <span style="font-size:13px; font-weight:700; color:var(--text-main);">0% (Bank Guarantee Collateral)</span>
-            </div>
-          </div>
-
-          <button class="btn btn-primary" onclick="app.restartDemo()" style="justify-content:center; padding:12px 32px; margin:0 auto; display:inline-flex;">Restart Prototype Walkthrough</button>
-        </div>
       </section>
 
     </main>
@@ -930,12 +669,53 @@
     </div>
   </div>
 
+  <!-- Start New Order Modal -->
+  <div class="upload-modal" id="start-order-modal">
+    <div class="modal-content" style="max-width:480px; padding:28px;">
+      <div class="modal-header" style="border-bottom:1px solid var(--border-color); padding-bottom:12px; margin-bottom:16px;">
+        <h4 class="modal-title">Create New Export Order</h4>
+        <button class="modal-close" onclick="app.closeStartOrderModal()">✕</button>
+      </div>
+      
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        <div>
+          <label style="display:block; font-size:12px; font-weight:700; color:var(--text-main); margin-bottom:6px;">Buyer Company Name</label>
+          <input type="text" id="new-order-buyer" class="onboarding-input" placeholder="e.g. London Cotton Ltd" style="padding:10px 12px; width:100%; border:1px solid var(--border-color); border-radius:6px; font-size:13px;">
+        </div>
+        
+        <div>
+          <label style="display:block; font-size:12px; font-weight:700; color:var(--text-main); margin-bottom:6px;">Contract Value (USD)</label>
+          <input type="number" id="new-order-value" class="onboarding-input" placeholder="e.g. 15000" style="padding:10px 12px; width:100%; border:1px solid var(--border-color); border-radius:6px; font-size:13px;">
+        </div>
+
+        <div>
+          <label style="display:block; font-size:12px; font-weight:700; color:var(--text-main); margin-bottom:6px;">Goods Description</label>
+          <input type="text" id="new-order-goods" class="onboarding-input" placeholder="e.g. Silk Garments, Handicrafts" style="padding:10px 12px; width:100%; border:1px solid var(--border-color); border-radius:6px; font-size:13px;">
+        </div>
+        
+        <div>
+          <label style="display:block; font-size:12px; font-weight:700; color:var(--text-main); margin-bottom:6px;">Payment Security Agreement</label>
+          <select id="new-order-flow" class="onboarding-input" style="padding:10px 12px; width:100%; border:1px solid var(--border-color); border-radius:6px; font-size:13px;">
+            <option value="lc">Letter of Credit (LC) - Recommended for New Buyers</option>
+            <option value="advance">Advance Payment (Prepaid) - Lower Exporter Risk</option>
+            <option value="open">Open Account (Pay Later) - Higher Exporter Risk</option>
+          </select>
+        </div>
+      </div>
+      
+      <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:24px; border-top:1px solid var(--border-color); padding-top:16px;">
+        <button class="btn btn-outline btn-sm" onclick="app.closeStartOrderModal()">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="app.submitNewOrder()">Create & Start Workspace</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toast-container"></div>
 
   <!-- Celebration Canvas -->
   <canvas id="confetti-canvas"></canvas>
 
-  <script src="app.js?v=1.0.2"></script>
+  <script src="app.js?v=1.0.3"></script>
 </body>
 </html>
