@@ -80,7 +80,7 @@ const app = (() => {
   }
 
   function renderCounters() {
-    const active    = S.orders.filter(o => o.stage !== 'completed').length;
+    const active    = S.orders.filter(o => o.urgency === 'active').length;
     const attention = S.orders.filter(o => o.urgency === 'needs-attention').length;
     const completed = S.orders.filter(o => o.stage === 'completed').length;
     const overdue   = S.orders.filter(o => o.urgency === 'overdue').length;
@@ -110,22 +110,84 @@ const app = (() => {
       (urgencyRank[a.urgency] ?? 4) - (urgencyRank[b.urgency] ?? 4)
     );
 
-    document.getElementById('home-orders-list').innerHTML = sorted.map(o => {
+    const flags = { 'US': '🇺🇸', 'DE': '🇩🇪', 'AE': '🇦🇪' };
+
+    const rows = sorted.map(o => {
       const buyer = getBuyer(o.buyerId);
+      const na = nextAction(o);
+      
+      const stages = {
+        'order-created':     ['Awaiting Request', 'badge-warn'],
+        'payment-pending':   ['Awaiting Payment', 'badge-warn'],
+        'payment-confirmed': ['Payment Confirmed', 'badge-primary'],
+        'awaiting-documents':['Uploading Docs', 'badge-primary'],
+        'overdue':           ['Overdue', 'badge-error'],
+        'completed':         ['Completed', 'badge-success']
+      };
+      const [stageTxt, stageCls] = stages[o.stage] || [o.stage, 'badge-muted'];
+
+      const urgencies = {
+        'needs-attention': ['Needs Attention', 'badge-warn'],
+        'active':          ['Active', 'badge-primary'],
+        'completed':       ['Completed', 'badge-success'],
+        'overdue':         ['Overdue', 'badge-error']
+      };
+      const [urgencyTxt, urgencyCls] = urgencies[o.urgency] || [o.urgency, 'badge-muted'];
+
+      const countryFlag = buyer ? (flags[buyer.countryCode] || '🏳️') : '🏳️';
+      const countryName = buyer ? buyer.country : '—';
+
       return `
-        <div class="order-card ${o.urgency}" onclick="app.openOrder('${o.id}')">
-          <div class="oc-left">
-            <div class="oc-id">${o.id} &nbsp;·&nbsp; ${o.invoiceNumber}</div>
-            <div class="oc-buyer">${buyer ? buyer.name : '—'}</div>
-            <div class="oc-urgency">${urgencyText(o)}</div>
-          </div>
-          <div class="oc-right">
-            <div class="oc-amount">${fmtAmt(o.amountUSD, o.currency)}</div>
-            <div class="oc-inr">&asymp; ${fmtINR(o.amountUSD)}</div>
-            <div class="oc-arrow">›</div>
-          </div>
-        </div>`;
+        <tr>
+          <td>
+            <div class="t-order-id">${o.id}</div>
+            <div class="t-invoice-number">${o.invoiceNumber}</div>
+          </td>
+          <td>
+            <div class="t-buyer-name">${buyer ? buyer.name : '—'}</div>
+            <div class="t-country-code">${countryFlag} ${countryName}</div>
+          </td>
+          <td>
+            <span class="badge ${stageCls}">${stageTxt}</span>
+          </td>
+          <td>
+            <div class="t-next-action-text">${na.text}</div>
+          </td>
+          <td>
+            <div class="t-amount-usd">${fmtAmt(o.amountUSD, o.currency)}</div>
+          </td>
+          <td>
+            <div class="t-amount-inr">${fmtINR(o.amountUSD)}</div>
+          </td>
+          <td>
+            <span class="badge ${urgencyCls}">${urgencyTxt}</span>
+          </td>
+          <td style="text-align:right;">
+            <button class="btn btn-secondary btn-sm" onclick="app.openOrder('${o.id}')">Manage</button>
+          </td>
+        </tr>`;
     }).join('');
+
+    document.getElementById('home-orders-list').innerHTML = `
+      <div class="table-container">
+        <table class="orders-table">
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Buyer</th>
+              <th>Stage</th>
+              <th>Next Action</th>
+              <th>Amount</th>
+              <th>INR Value</th>
+              <th>Status</th>
+              <th style="text-align:right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+          </tbody>
+        </table>
+      </div>`;
   }
 
   function updateBadge() {
@@ -287,8 +349,8 @@ const app = (() => {
     const allDone  = o.documents.every(d => d.uploaded);
 
     const lockNotice = isLocked ? `
-      <div class="alert-strip warn" style="margin-bottom:var(--s5);">
-        Document uploads are available after payment is confirmed and goods have been shipped.
+      <div class="alert-strip info" style="margin-bottom:var(--s5);">
+        💡 Note: You can upload your documents early. The order will close once payment is confirmed and goods are shipped.
       </div>` : '';
 
     const items = o.documents.map(d => `
@@ -296,9 +358,7 @@ const app = (() => {
         <div class="doc-icon">${d.uploaded ? '&#10003;' : '&#128196;'}</div>
         <div class="doc-name">${d.name}</div>
         <span class="doc-chip ${d.uploaded ? 'uploaded' : 'missing'}">${d.uploaded ? 'Uploaded' : 'Missing'}</span>
-        ${!d.uploaded && !isLocked ? `<button class="btn btn-secondary btn-sm" onclick="app.uploadDoc('${o.id}','${d.id}')">Upload</button>` : ''}
-        ${!d.uploaded && isLocked  ? `<button class="btn btn-secondary btn-sm" disabled title="Available after payment">Upload</button>` : ''}
-        ${d.uploaded ? `<button class="btn btn-ghost btn-sm" onclick="app.removeDoc('${o.id}','${d.id}')">Remove</button>` : ''}
+        ${!d.uploaded ? `<button class="btn btn-secondary btn-sm" onclick="app.uploadDoc('${o.id}','${d.id}')">Upload</button>` : `<button class="btn btn-ghost btn-sm" onclick="app.removeDoc('${o.id}','${d.id}')">Remove</button>`}
       </div>`).join('');
 
     const doneNote = allDone ? `<div class="alert-strip success" style="margin-top:var(--s5);">All documents uploaded. You can now close this order.</div>` : '';
@@ -549,7 +609,20 @@ const app = (() => {
     if (!doc) return;
 
     const el = document.getElementById('di-' + docId);
-    if (el) el.innerHTML = `<div class="doc-icon">&#8987;</div><div class="doc-name">${doc.name}</div><span class="doc-chip missing">Uploading...</span>`;
+    const elGlobal = document.getElementById('di-global-' + docId);
+
+    if (el) {
+      el.innerHTML = `<div class="doc-icon">&#8987;</div><div class="doc-name">${doc.name}</div><span class="doc-chip missing">Uploading...</span>`;
+    }
+    if (elGlobal) {
+      elGlobal.innerHTML = `
+        <div class="doc-icon">&#8987;</div>
+        <div style="flex:1;">
+          <div class="doc-name">${doc.name}</div>
+          <div style="font-size:11px;color:var(--text-muted);">${orderId} &nbsp;·&nbsp; ${getBuyer(o.buyerId)?.name || '—'}</div>
+        </div>
+        <span class="doc-chip missing">Uploading...</span>`;
+    }
 
     setTimeout(() => {
       doc.uploaded = true;
@@ -561,7 +634,12 @@ const app = (() => {
       } else {
         showToast(`${doc.name} uploaded successfully`);
       }
-      renderSubTab(o);
+      
+      if (S.screen === 'documents') {
+        renderDocuments();
+      } else {
+        renderSubTab(o);
+      }
     }, 1400);
   }
 
@@ -574,8 +652,13 @@ const app = (() => {
       setTl(o, 4, 'current', null);
       setTl(o, 5, 'locked', null);
     }
-    showToast(`${doc.name} removed. Please re-upload.`);
-    renderSubTab(o);
+    showToast(`${doc.name} removed.`);
+    
+    if (S.screen === 'documents') {
+      renderDocuments();
+    } else {
+      renderSubTab(o);
+    }
   }
 
   // ============================================================
@@ -855,13 +938,14 @@ const app = (() => {
     }
     document.getElementById('docs-list').innerHTML = `
       <div class="doc-list">${all.map(d => `
-        <div class="doc-item ${d.uploaded ? 'uploaded' : 'missing'}">
+        <div class="doc-item ${d.uploaded ? 'uploaded' : 'missing'}" id="di-global-${d.id}">
           <div class="doc-icon">${d.uploaded ? '&#10003;' : '&#128196;'}</div>
           <div style="flex:1;">
             <div class="doc-name">${d.name}</div>
             <div style="font-size:11px;color:var(--text-muted);">${d.orderId} &nbsp;·&nbsp; ${d.buyerName}</div>
           </div>
           <span class="doc-chip ${d.uploaded ? 'uploaded' : 'missing'}">${d.uploaded ? 'Uploaded' : 'Missing'}</span>
+          ${!d.uploaded ? `<button class="btn btn-secondary btn-sm" onclick="app.uploadDoc('${d.orderId}','${d.id}')">Upload</button>` : `<button class="btn btn-ghost btn-sm" onclick="app.removeDoc('${d.orderId}','${d.id}')">Remove</button>`}
         </div>`).join('')}
       </div>`;
   }
