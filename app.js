@@ -52,7 +52,7 @@ const app = (() => {
       'home': 'nav-home', 'order-detail': 'nav-orders',
       'new-order': 'nav-orders', 'lc-inquiry': 'nav-orders',
       'financing': 'nav-orders', 'documents': 'nav-documents',
-      'pm-dashboard': 'nav-pm', 'profile': 'nav-profile'
+      'profile': 'nav-profile'
     };
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     const nav = map[id];
@@ -68,7 +68,6 @@ const app = (() => {
   // ============================================================
   function goHome()        { renderHome(); showScreen('home'); }
   function goDocuments()   { renderDocuments(); showScreen('documents'); }
-  function goPMDashboard() { renderPMDash(); showScreen('pm-dashboard'); }
   function goProfile()     { showScreen('profile'); }
 
   // ============================================================
@@ -868,49 +867,11 @@ const app = (() => {
   }
 
   // ============================================================
-  // PM DASHBOARD
-  // ============================================================
-  function renderPMDash() {
-    const ev = S.funnelLog;
-    const stages = [
-      { key: 'Discovery', events: ['LC_DISCOVERY','FIN_DISCOVERY'] },
-      { key: 'Click',     events: ['LC_CLICK','FIN_CLICK']         },
-      { key: 'Explore',   events: ['LC_EXPLORE','FIN_EXPLORE']     },
-      { key: 'Apply',     events: ['LC_APPLY','FIN_APPLY']         }
-    ].map(s => ({ ...s, n: ev.filter(e => s.events.includes(e.event)).length }));
-
-    const mx = Math.max(...stages.map(s => s.n), 1);
-    document.getElementById('funnel-bars').innerHTML = stages.map(s => `
-      <div class="funnel-row">
-        <div class="funnel-lbl">${s.key}</div>
-        <div class="funnel-track">
-          <div class="funnel-fill" style="width:${Math.max(s.n / mx * 100, s.n ? 12 : 4)}%">
-            ${s.n ? `<span class="funnel-count">${s.n}</span>` : ''}
-          </div>
-        </div>
-        <div class="funnel-num">${s.n}</div>
-      </div>`).join('');
-
-    document.getElementById('event-log-items').innerHTML = ev.length === 0
-      ? `<div style="padding:var(--s6);text-align:center;color:var(--text-muted);font-size:13px;">No events yet. Interact with LC and Financing cards to see events logged here.</div>`
-      : [...ev].reverse().map(e => {
-          const isLC = e.event.startsWith('LC_');
-          return `
-            <div class="event-row">
-              <span class="ev-badge ${isLC ? 'ev-lc' : 'ev-fin'}">${e.event}</span>
-              <span style="flex:1;color:var(--text-secondary);">Order ${e.orderId}</span>
-              <span style="font-size:11px;color:var(--text-muted);">${e.ts}</span>
-            </div>`;
-        }).join('');
-  }
-
-  // ============================================================
-  // FUNNEL EVENT TRACKING
+  // FUNNEL EVENT TRACKING (background — events logged silently)
   // ============================================================
   function logEvent(event, orderId) {
     const ts = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
     S.funnelLog.push({ event, orderId, ts });
-    showFunnelToast(`${event} logged for ${orderId}`);
   }
 
   function startExplore(product, orderId) {
@@ -981,7 +942,7 @@ const app = (() => {
   // PUBLIC API
   // ============================================================
   return {
-    goHome, goDocuments, goPMDashboard, goProfile,
+    goHome, goDocuments, goProfile,
     openOrder, switchTab,
     sendRequest, simulatePaid, markShipped,
     uploadDoc, removeDoc,
