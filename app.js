@@ -535,11 +535,6 @@ const app = (() => {
             <div class="od-buyer">${buyer ? buyer.name : '—'}</div>
             <div class="od-sub">${buyer ? buyer.country : ''} &nbsp;·&nbsp; ${o.currency} &nbsp;·&nbsp; ${o.paymentTerms === 'advance' ? 'Advance payment' : 'Open account'}</div>
           </div>
-          <div class="od-header-action">
-            <span class="badge ${na.color === 'warn' ? 'badge-warn' : na.color === 'error' ? 'badge-error' : na.color === 'success' ? 'badge-success' : 'badge-primary'}">${stageTxt}</span>
-            <div class="od-na-text">${na.text}</div>
-            ${na.cta ? `<button class="btn btn-primary btn-sm" onclick="app.${na.fn}('${o.id}')">${na.cta}</button>` : ''}
-          </div>
           <div>
             <div class="od-amount">${fmtAmt(o.amountUSD, o.currency)}</div>
             <div class="od-amount-inr">&asymp; ${fmtINR(o.amountUSD)}</div>
