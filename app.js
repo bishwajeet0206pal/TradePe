@@ -25,7 +25,10 @@ const app = (() => {
     nextNum: 204,
     pendingLCOrderId: null,
     pendingFinOrderId: null,
-    noState: null           // new-order form state
+    noState: null,          // new-order form state
+    onboarded: false,
+    chatOpen: false,
+    chatMessages: []
   };
 
   // ============================================================
@@ -34,6 +37,18 @@ const app = (() => {
   function init() {
     S.orders = JSON.parse(JSON.stringify(DATA.orders));
     S.buyers = JSON.parse(JSON.stringify(DATA.buyers));
+
+    // Check onboarding repositioning status
+    const onboarded = localStorage.getItem('tradepe_onboarded_v2');
+    if (onboarded === 'true') {
+      S.onboarded = true;
+      document.getElementById('repositioning-modal').style.display = 'none';
+    } else {
+      S.onboarded = false;
+      document.getElementById('repositioning-modal').style.display = 'flex';
+      logEvent('REPOSITION_DISCOVERY', 'onboarding');
+    }
+
     renderHome();
     showScreen('home');
   }
@@ -310,9 +325,24 @@ const app = (() => {
         </div>`;
     }
 
+    let supportWidget = '';
+    if (o.lcTriggered || o.lcApplied) {
+      supportWidget = `
+        <div class="specialist-card" style="margin-bottom:var(--s6);">
+          <div class="spec-avatar">S</div>
+          <div style="flex:1;">
+            <div class="spec-online">🟢 Online • Sanjay Mehta</div>
+            <div class="spec-role">Dedicated Trade Finance Specialist</div>
+            <div class="spec-desc">Questions about this LC or worried about bank delays? Chat with Sanjay directly. Zero automated chatbots.</div>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="app.toggleChat()">Chat Now</button>
+        </div>`;
+    }
+
     return `
       <div class="sub-panel active">
         ${lcCard}
+        ${supportWidget}
         <div class="info-grid">
           <div class="info-cell"><div class="info-label">Buyer</div><div class="info-val">${buyer ? buyer.name : '—'}</div></div>
           <div class="info-cell"><div class="info-label">Country</div><div class="info-val">${buyer ? buyer.country : '—'}</div></div>
@@ -951,6 +981,90 @@ const app = (() => {
   }
 
   // ============================================================
+  // ONBOARDING REPOSITIONING
+  // ============================================================
+  function dismissOnboarding() {
+    S.onboarded = true;
+    localStorage.setItem('tradepe_onboarded_v2', 'true');
+    document.getElementById('repositioning-modal').style.display = 'none';
+    logEvent('REPOSITION_ENGAGED', 'onboarding');
+    showToast('Welcome to TradePe Command Center!', '🚀');
+  }
+
+  function replayOnboarding() {
+    S.onboarded = false;
+    localStorage.removeItem('tradepe_onboarded_v2');
+    document.getElementById('repositioning-modal').style.display = 'flex';
+    logEvent('REPOSITION_DISCOVERY', 'onboarding');
+    goHome();
+  }
+
+  // ============================================================
+  // SPECIALIST SUPPORT CHAT
+  // ============================================================
+  function toggleChat() {
+    S.chatOpen = !S.chatOpen;
+    const pane = document.getElementById('chat-pane');
+    if (!pane) return;
+    
+    if (S.chatOpen) {
+      pane.classList.add('active');
+      logEvent('SPECIALIST_CONTACT', S.orderId || 'general');
+      
+      if (S.chatMessages.length === 0) {
+        S.chatMessages.push({
+          sender: 'specialist',
+          text: `Hi Ankita! I am Sanjay, your dedicated Trade Finance Specialist at TradePe. I will guide you through this Letter of Credit process. If you have any questions or if bank clearance gets delayed, I am here to help. Zero automated chatbots, just direct chat. How can I help you today?`
+        });
+      }
+      renderChat();
+    } else {
+      pane.classList.remove('active');
+    }
+  }
+
+  function renderChat() {
+    const list = document.getElementById('chat-messages');
+    if (!list) return;
+    list.innerHTML = S.chatMessages.map(m => `
+      <div class="chat-msg ${m.sender === 'specialist' ? 'specialist' : 'user'}">
+        ${m.text}
+      </div>
+    `).join('');
+    list.scrollTop = list.scrollHeight;
+  }
+
+  function sendChatMessage() {
+    const input = document.getElementById('chat-input-text');
+    if (!input) return;
+    const text = input.value.trim();
+    if (!text) return;
+
+    S.chatMessages.push({ sender: 'user', text });
+    input.value = '';
+    renderChat();
+    logEvent('SPECIALIST_CHAT_SENT', S.orderId || 'general');
+
+    // Simulate Sanjay typing
+    setTimeout(() => {
+      let reply = '';
+      const q = text.toLowerCase();
+      if (q.includes('reject') || q.includes('dispute') || q.includes('wrong')) {
+        reply = `If the buyer raises a dispute or rejects the draft, TradePe mediates immediately. You can upload updated invoice drafts directly under the Close tab, and I will personally review and send them to the partner bank for quick clearance. We won't leave you stranded.`;
+      } else if (q.includes('long') || q.includes('delay') || q.includes('time') || q.includes('days')) {
+        reply = `The partner bank review takes up to 2 business days. If there is any delay beyond that, I have direct escalation lines with HDFC and ICICI partner bank managers to speed it up. I will monitor it for you.`;
+      } else if (q.includes('kyc') || q.includes('fail') || q.includes('error') || q.includes('reject doc')) {
+        reply = `If the bank rejects the documents due to a KYC mismatch or signature issue, I will call you immediately to guide you through the corrected details. We'll handle the re-submission together to avoid payment delay.`;
+      } else {
+        reply = `That is a great question. For this LC application, we guarantee quick clearance. I'm personally overseeing your account and will ensure partner bank approval is fast tracked. Let me know if you need help with documentation drafting!`;
+      }
+
+      S.chatMessages.push({ sender: 'specialist', text: reply });
+      renderChat();
+    }, 1200);
+  }
+
+  // ============================================================
   // FUNNEL EVENT TRACKING (background — events logged silently)
   // ============================================================
   function logEvent(event, orderId) {
@@ -1035,7 +1149,8 @@ const app = (() => {
     openFin, cancelFin, submitFin, dismissFin,
     startNewOrder, onBuyerInput, selectBuyer,
     noStep1Continue, noBack, onAmountInput, saveOrder,
-    goPaymentTab, goDocsTab, sendReminder
+    goPaymentTab, goDocsTab, sendReminder,
+    dismissOnboarding, replayOnboarding, toggleChat, sendChatMessage
   };
 
 })();

@@ -233,6 +233,18 @@
           <div style="font-size:20px;font-weight:700;margin-bottom:var(--s1);">Apply for LC</div>
           <div style="font-size:13px;color:var(--text-secondary);">No branch visit needed. Decision in 2 business days.</div>
         </div>
+        
+        <!-- Dedicated Trade Specialist Card -->
+        <div class="specialist-card" style="margin-bottom:var(--s6);">
+          <div class="spec-avatar">S</div>
+          <div style="flex:1;">
+            <div class="spec-online">🟢 Online • Sanjay Mehta</div>
+            <div class="spec-role">Dedicated Trade Finance Specialist</div>
+            <div class="spec-desc">Questions about this LC application or worried about bank delays? Chat with Sanjay directly. Zero automated chatbots.</div>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="app.toggleChat()">Chat Now</button>
+        </div>
+
         <h2 style="font-size:17px;font-weight:700;margin-bottom:var(--s6);">LC Application Details</h2>
         <div class="form-group">
           <label class="form-label">Buyer name</label>
@@ -388,10 +400,67 @@
           <input type="tel" class="form-input" value="+91 98765 43210">
         </div>
         <button class="btn btn-primary" style="margin-top:var(--s4);">Save changes</button>
+        <button class="btn btn-secondary" onclick="app.replayOnboarding()" style="margin-top:var(--s4); margin-left:var(--s2);">Replay Welcome Experience</button>
       </div>
     </section>
 
   </main>
+</div>
+
+<!-- Onboarding Repositioning Modal -->
+<div class="overlay active" id="repositioning-modal" style="display: none;">
+  <div class="onb-card">
+    <div class="onb-badge">COMMAND CENTER v2.0</div>
+    <h2 class="onb-title">Welcome back, Ankita</h2>
+    <p class="onb-subtitle">You have completed 12 payments with TradePe. Today, we've upgraded your account to a full <strong>Trade Finance & Export Command Center</strong>.</p>
+    
+    <div class="onb-features">
+      <div class="onb-feat">
+        <span class="onb-icon">📋</span>
+        <div>
+          <div class="onb-feat-name">Export Command Center</div>
+          <div class="onb-feat-desc">Track timelines, manage document checklists by country, and close orders in one place.</div>
+        </div>
+      </div>
+      <div class="onb-feat">
+        <span class="onb-icon">🛡️</span>
+        <div>
+          <div class="onb-feat-name">Letter of Credit (LC) Guarantees</div>
+          <div class="onb-feat-desc">Get payment security with new buyers. Apply in 5 minutes via partner banks, no branch visits.</div>
+        </div>
+      </div>
+      <div class="onb-feat">
+        <span class="onb-icon">⚡</span>
+        <div>
+          <div class="onb-feat-name">Invoice Financing</div>
+          <div class="onb-feat-desc">Don't wait 30+ days for open accounts. Get paid early at a low 1.5% fee directly inside the flow.</div>
+        </div>
+      </div>
+    </div>
+    
+    <button class="btn btn-primary btn-lg" onclick="app.dismissOnboarding()" style="width:100%; justify-content:center;">Explore Command Center</button>
+  </div>
+</div>
+
+<!-- Specialist Support Chat Sidebar -->
+<div id="chat-pane">
+  <div class="chat-header">
+    <div class="chat-header-left">
+      <div class="chat-avatar">S</div>
+      <div>
+        <div class="chat-name">Sanjay Mehta</div>
+        <div class="chat-title">Senior Trade Finance Specialist</div>
+      </div>
+    </div>
+    <button class="chat-close-btn" onclick="app.toggleChat()">&times;</button>
+  </div>
+  <div class="chat-messages" id="chat-messages">
+    <!-- Messages render here -->
+  </div>
+  <div class="chat-input-row">
+    <input type="text" class="chat-input" id="chat-input-text" placeholder="Type a message..." onkeydown="if(event.key==='Enter') app.sendChatMessage()">
+    <button class="btn btn-primary btn-sm" onclick="app.sendChatMessage()">Send</button>
+  </div>
 </div>
 
 <!-- Global toast notification -->
