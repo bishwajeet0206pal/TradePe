@@ -38,16 +38,10 @@ const app = (() => {
     S.orders = JSON.parse(JSON.stringify(DATA.orders));
     S.buyers = JSON.parse(JSON.stringify(DATA.buyers));
 
-    // Check onboarding repositioning status
-    const onboarded = localStorage.getItem('tradepe_onboarded_v2');
-    if (onboarded === 'true') {
-      S.onboarded = true;
-      document.getElementById('repositioning-modal').style.display = 'none';
-    } else {
-      S.onboarded = false;
-      document.getElementById('repositioning-modal').style.display = 'flex';
-      logEvent('REPOSITION_DISCOVERY', 'onboarding');
-    }
+    // Show onboarding repositioning modal on every fresh load
+    S.onboarded = false;
+    document.getElementById('repositioning-modal').style.display = 'flex';
+    logEvent('REPOSITION_DISCOVERY', 'onboarding');
 
     renderHome();
     showScreen('home');
