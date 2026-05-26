@@ -1667,22 +1667,8 @@ const app = (() => {
   // ADOPTION GOALS & PREMIUM UNLOCKS
   // ============================================================
   function renderAdoptionGoal() {
-    const el = document.getElementById('adoption-goal-container');
-    if (!el) return;
-
-    if (S.adoptionGoal.claimed) {
-      document.getElementById('user-premium-badge').style.display = 'inline-block';
-      document.getElementById('header-premium-badge').style.display = 'inline-flex';
-      el.innerHTML = `
-        <div class="goal-card" style="border-color: #F59E0B; background: linear-gradient(135deg, var(--surface), rgba(245, 158, 11, 0.02));">
-          <div class="goal-header">
-            <div class="goal-title">👑 TradePe Premium Active</div>
-            <span class="goal-reward-tag" style="background: rgba(245, 158, 11, 0.1); color: #D97706;">Unlocked</span>
-          </div>
-          <div class="goal-desc">✨ Congratulations! Waived Letter of Credit fees and 0% Invoice Financing transaction fees are now active on your Jaipur Textiles Export account.</div>
-        </div>`;
-      return;
-    }
+    const triggerEl = document.getElementById('header-goal-trigger-container');
+    const modalContentEl = document.getElementById('modal-goal-content');
 
     const tasks = S.adoptionGoal.tasks;
     const completedList = [tasks.createOrder, tasks.sendPayment, tasks.uploadDoc];
@@ -1693,55 +1679,109 @@ const app = (() => {
       S.adoptionGoal.unlocked = true;
     }
 
-    if (S.adoptionGoal.unlocked) {
-      el.innerHTML = `
-        <div class="goal-card" style="border-color: #7C3AED; background: linear-gradient(135deg, var(--surface), rgba(124, 92, 246, 0.02));">
-          <div class="goal-unlocked-panel">
-            <div class="goal-unlocked-title">🎉 Milestone Goal Achieved!</div>
-            <p class="goal-desc" style="text-align:center; margin-bottom:var(--s4);">You have completed all onboarding tasks. Ready to claim 30 days of free TradePe Premium (Waived LC fees, 0% Financing)?</p>
-            <button class="btn-claim-premium" onclick="app.claimPremium()">
-              ✨ Claim Free Premium Month
-            </button>
-          </div>
-        </div>`;
-      return;
+    // 1. Render trigger button
+    if (triggerEl) {
+      if (S.adoptionGoal.claimed) {
+        triggerEl.innerHTML = `
+          <button class="header-goal-btn claimed" onclick="app.openGoalModal()">
+            <span>👑 Premium Benefits Active</span>
+          </button>`;
+      } else if (S.adoptionGoal.unlocked) {
+        triggerEl.innerHTML = `
+          <button class="header-goal-btn claim-now" onclick="app.openGoalModal()">
+            <span>🎉 CLAIM FREE PREMIUM MONTH NOW!</span>
+          </button>`;
+      } else {
+        let text = `🎁 Unlock Free Premium (${completedCount}/3)`;
+        if (completedCount === 1) text = `🚀 1/3 Done: Get Free Premium`;
+        if (completedCount === 2) text = `⚡ 2/3 Done: Almost There!`;
+        triggerEl.innerHTML = `
+          <button class="header-goal-btn" onclick="app.openGoalModal()">
+            <span>${text}</span>
+          </button>`;
+      }
     }
 
-    el.innerHTML = `
-      <div class="goal-card">
-        <div class="goal-header">
-          <div class="goal-title">🎁 Onboarding Goal: Unlock TradePe Premium</div>
-          <span class="goal-reward-tag">30 Days Free</span>
-        </div>
-        <div class="goal-desc">
-          Complete 3 key actions on the Command Center to unlock <strong>30 days of waived Letter of Credit processing fees</strong> and <strong>0% Invoice Financing transaction fees</strong> (Save up to ₹25,000)!
-        </div>
-        
-        <div class="goal-progress-container">
-          <div class="goal-progress-text">
-            <span>Workflow Completion Progress</span>
-            <span>${completedCount} of 3 completed (${percent}%)</span>
-          </div>
-          <div class="goal-progress-bar">
-            <div class="goal-progress-fill" style="width: ${percent}%;"></div>
-          </div>
-        </div>
+    // 2. Render modal content
+    if (modalContentEl) {
+      if (S.adoptionGoal.claimed) {
+        document.getElementById('user-premium-badge').style.display = 'inline-block';
+        document.getElementById('header-premium-badge').style.display = 'inline-flex';
+        modalContentEl.innerHTML = `
+          <div class="goal-card" style="border-color: #F59E0B; background: linear-gradient(135deg, var(--surface), rgba(245, 158, 11, 0.02)); margin-bottom: 0; padding: 0; box-shadow: none;">
+            <div class="goal-header" style="margin-top: 12px;">
+              <div class="goal-title" style="font-size: 18px;">👑 TradePe Premium Active</div>
+              <span class="goal-reward-tag" style="background: rgba(245, 158, 11, 0.1); color: #D97706; padding: var(--s2) var(--s4);">Unlocked</span>
+            </div>
+            <p class="goal-desc" style="font-size: 14.5px; line-height: 1.6; margin-bottom: var(--s6); margin-top: var(--s4);">
+              ✨ Congratulations! Your 30 days of <strong>waived Letter of Credit processing fees</strong> and <strong>0% Invoice Financing transaction fees</strong> are now active on your account.
+            </p>
+            <div class="help-you-save" style="margin: 0; background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(217, 119, 6, 0.05)); border: 1px solid rgba(245, 158, 11, 0.2); padding: var(--s4); border-radius: var(--r-md); text-align: center;">
+              <div style="font-size: 13px; font-weight: 700; color: #D97706; text-transform: uppercase; letter-spacing: 0.5px;">Estimated Savings</div>
+              <div style="font-size: 28px; font-weight: 900; color: #B45309; margin: 4px 0;">₹25,000+</div>
+              <div style="font-size: 12px; color: var(--text-secondary);">Enjoy priority VIP treatment and 0% financing fees.</div>
+            </div>
+          </div>`;
+      } else if (S.adoptionGoal.unlocked) {
+        modalContentEl.innerHTML = `
+          <div class="goal-card" style="margin-bottom: 0; padding: 0; box-shadow: none;">
+            <div class="goal-unlocked-panel" style="padding-top: 12px;">
+              <div class="goal-unlocked-title" style="font-size: 22px; margin-bottom: var(--s2);">🎉 Milestone Goal Achieved!</div>
+              <p class="goal-desc" style="text-align:center; font-size: 14px; line-height: 1.6; margin-bottom: var(--s6);">
+                Outstanding job! You have completed all onboarding actions. Claim your reward now to unlock 30 days of <strong>100% Free TradePe Premium</strong> (Waived LC fees, 0% Financing transaction fees).
+              </p>
+              <button class="btn-claim-premium" onclick="app.claimPremium()" style="font-size: 15px; padding: 14px 36px; width: 100%; justify-content: center; box-shadow: 0 4px 20px rgba(124, 58, 237, 0.5);">
+                ✨ Claim Free Premium Month
+              </button>
+            </div>
+          </div>`;
+      } else {
+        modalContentEl.innerHTML = `
+          <div class="goal-card" style="margin-bottom: 0; padding: 0; box-shadow: none;">
+            <div class="goal-header" style="margin-top: 12px;">
+              <div class="goal-title" style="font-size: 18px;">🎁 Unlock TradePe Premium</div>
+              <span class="goal-reward-tag" style="padding: var(--s2) var(--s4);">30 Days Free</span>
+            </div>
+            <div class="goal-desc" style="font-size: 14px; line-height: 1.6; margin-bottom: var(--s6);">
+              Complete 3 key actions on the Command Center to unlock <strong>30 days of waived Letter of Credit processing fees</strong> and <strong>0% Invoice Financing transaction fees</strong> (Save up to ₹25,000)!
+            </div>
+            
+            <div class="goal-progress-container" style="margin-bottom: var(--s6);">
+              <div class="goal-progress-text" style="font-size: 12.5px; margin-bottom: 8px;">
+                <span>Workflow Completion Progress</span>
+                <span style="color: var(--primary); font-weight: 700;">${completedCount} of 3 completed (${percent}%)</span>
+              </div>
+              <div class="goal-progress-bar" style="height: 8px;">
+                <div class="goal-progress-fill" style="width: ${percent}%;"></div>
+              </div>
+            </div>
 
-        <div class="goal-list">
-          <div class="goal-item ${tasks.createOrder ? 'done' : ''}">
-            <div class="goal-check">${tasks.createOrder ? '✓' : ''}</div>
-            <span class="goal-label">Create an export order</span>
-          </div>
-          <div class="goal-item ${tasks.sendPayment ? 'done' : ''}">
-            <div class="goal-check">${tasks.sendPayment ? '✓' : ''}</div>
-            <span class="goal-label">Send a payment request</span>
-          </div>
-          <div class="goal-item ${tasks.uploadDoc ? 'done' : ''}">
-            <div class="goal-check">${tasks.uploadDoc ? '✓' : ''}</div>
-            <span class="goal-label">Upload any document</span>
-          </div>
-        </div>
-      </div>`;
+            <div class="goal-list" style="grid-template-columns: 1fr; gap: var(--s3); margin-bottom: var(--s2);">
+              <div class="goal-item ${tasks.createOrder ? 'done' : ''}" style="padding: var(--s4); cursor: ${tasks.createOrder ? 'default' : 'pointer'};" onclick="${tasks.createOrder ? '' : 'app.closeGoalModal(); app.startNewOrder();'}">
+                <div class="goal-check">${tasks.createOrder ? '✓' : ''}</div>
+                <div style="display: flex; flex-direction: column; gap: 2px;">
+                  <span class="goal-label" style="font-size: 13.5px; font-weight: 600;">Create an export order</span>
+                  <span style="font-size: 11px; color: var(--text-muted);">${tasks.createOrder ? 'Completed' : 'Add any invoice to start tracking'}</span>
+                </div>
+              </div>
+              <div class="goal-item ${tasks.sendPayment ? 'done' : ''}" style="padding: var(--s4); cursor: ${tasks.sendPayment ? 'default' : 'pointer'};" onclick="${tasks.sendPayment ? '' : 'app.closeGoalModal(); app.openOrder(\'TRP-204\'); app.switchTab(\'payment\');'}">
+                <div class="goal-check">${tasks.sendPayment ? '✓' : ''}</div>
+                <div style="display: flex; flex-direction: column; gap: 2px;">
+                  <span class="goal-label" style="font-size: 13.5px; font-weight: 600;">Send a payment request</span>
+                  <span style="font-size: 11px; color: var(--text-muted);">${tasks.sendPayment ? 'Completed' : 'Request payment from a buyer'}</span>
+                </div>
+              </div>
+              <div class="goal-item ${tasks.uploadDoc ? 'done' : ''}" style="padding: var(--s4); cursor: ${tasks.uploadDoc ? 'default' : 'pointer'};" onclick="${tasks.uploadDoc ? '' : 'app.closeGoalModal(); app.openOrder(\'TRP-202\'); app.switchTab(\'documents\');'}">
+                <div class="goal-check">${tasks.uploadDoc ? '✓' : ''}</div>
+                <div style="display: flex; flex-direction: column; gap: 2px;">
+                  <span class="goal-label" style="font-size: 13.5px; font-weight: 600;">Upload any document</span>
+                  <span style="font-size: 11px; color: var(--text-muted);">${tasks.uploadDoc ? 'Completed' : 'Attach a document to any checklist'}</span>
+                </div>
+              </div>
+            </div>
+          </div>`;
+      }
+    }
   }
 
   function claimPremium() {
@@ -1751,7 +1791,24 @@ const app = (() => {
     showToast('TradePe Premium Waived Fees Activated!', '👑');
     document.getElementById('user-premium-badge').style.display = 'inline-block';
     document.getElementById('header-premium-badge').style.display = 'inline-flex';
+    closeGoalModal();
     renderHome();
+  }
+
+  function openGoalModal() {
+    const modal = document.getElementById('goal-modal');
+    if (modal) {
+      modal.style.display = 'flex';
+      logEvent('GOAL_MODAL_OPENED', 'adoption_goal');
+      renderAdoptionGoal();
+    }
+  }
+
+  function closeGoalModal() {
+    const modal = document.getElementById('goal-modal');
+    if (modal) {
+      modal.style.display = 'none';
+    }
   }
 
   function saveProfile() {
@@ -1968,7 +2025,9 @@ const app = (() => {
     openHelp, closeHelp,
     claimPremium,
     saveProfile,
-    filterOrders
+    filterOrders,
+    openGoalModal,
+    closeGoalModal
   };
 
 })();

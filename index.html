@@ -91,6 +91,8 @@
             </h1>
             <p class="screen-subtitle">Here's what needs your attention today</p>
           </div>
+          <!-- Header Goal Trigger Button -->
+          <div id="header-goal-trigger-container"></div>
         </div>
       </div>
       <div class="home-content">
@@ -104,9 +106,6 @@
           <button class="btn btn-primary btn-sm" id="nudge-cta" onclick="app.nudgeGoToLC()">View Order</button>
           <button class="nudge-close" onclick="app.dismissNudge()" aria-label="Dismiss">&times;</button>
         </div>
-
-        <!-- Adoption Milestone Goal Widget -->
-        <div id="adoption-goal-container"></div>
 
 
 
@@ -546,6 +545,14 @@
   <div class="help-card">
     <button class="help-close" onclick="app.closeHelp()" aria-label="Close">&times;</button>
     <div id="help-content"><!-- JS renders --></div>
+  </div>
+</div>
+
+<!-- Onboarding Goal Modal Overlay -->
+<div class="overlay" id="goal-modal" style="display:none;" onclick="if(event.target===this)app.closeGoalModal()">
+  <div class="goal-modal-card">
+    <button class="nudge-close" onclick="app.closeGoalModal()" aria-label="Close" style="top:18px; right:18px; font-size:24px;">&times;</button>
+    <div id="modal-goal-content"></div>
   </div>
 </div>
 
