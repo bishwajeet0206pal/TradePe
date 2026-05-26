@@ -555,16 +555,6 @@ const app = (() => {
     // Inline timeline (always visible)
     renderInlineTimeline(o);
 
-    // Next action banner
-    document.getElementById('na-banner').innerHTML = `
-      <div class="next-action-banner ${na.color}">
-        <div class="na-content">
-          <div class="na-label">Next action</div>
-          <div class="na-text">${na.text}</div>
-        </div>
-        ${na.cta ? `<button class="btn btn-primary" onclick="app.${na.fn}('${o.id}')">${na.cta}</button>` : ''}
-      </div>`;
-
     renderSubTab(o);
   }
 
