@@ -476,6 +476,17 @@ const app = (() => {
     if (!o) return;
     const buyer = getBuyer(o.buyerId);
 
+    const na = nextAction(o);
+    const stages = {
+      'order-created':     ['Awaiting Request', 'badge-warn'],
+      'payment-pending':   ['Awaiting Payment', 'badge-warn'],
+      'payment-confirmed': ['Payment Confirmed', 'badge-primary'],
+      'awaiting-documents':['Uploading Docs', 'badge-primary'],
+      'overdue':           ['Needs Attention', 'badge-error'],
+      'completed':         ['Completed', 'badge-success']
+    };
+    const [stageTxt, stageCls] = stages[o.stage] || ['Unknown', 'badge-muted'];
+
     // Header
     document.getElementById('od-header').innerHTML = `
       <div class="od-header">
@@ -510,7 +521,6 @@ const app = (() => {
     renderInlineTimeline(o);
 
     // Next action banner
-    const na = nextAction(o);
     document.getElementById('na-banner').innerHTML = `
       <div class="next-action-banner ${na.color}">
         <div class="na-content">
@@ -1719,6 +1729,10 @@ const app = (() => {
     renderHome();
   }
 
+  function saveProfile() {
+    showToast('Profile changes saved successfully', '💾');
+  }
+
   // ============================================================
   // FUNNEL EVENT TRACKING (background — events logged silently)
   // ============================================================
@@ -1927,7 +1941,8 @@ const app = (() => {
     dismissOnboarding, replayOnboarding, toggleChat, sendChatMessage,
     nudgeGoToLC, dismissNudge,
     openHelp, closeHelp,
-    claimPremium
+    claimPremium,
+    saveProfile
   };
 
 })();
