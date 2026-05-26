@@ -1046,9 +1046,6 @@ const app = (() => {
         }
         return { text: 'Review invoice details and send payment request to your buyer', cta: 'Go to Payment', fn: 'goPaymentTab', color: 'warning' };
       case 'payment-pending':
-        if (isOpen && lcPending) {
-          return { text: 'Payment request sent. Strongly consider LC before shipping \u2014 this is a new buyer on open terms.', cta: 'Apply for LC', fn: 'switchTab', color: 'warning', tabArg: 'overview' };
-        }
         if (lcUnderReview) {
           return { text: 'Payment pending. LC under review \u2014 do not ship until LC is issued.', cta: null, fn: null, color: 'warning' };
         }
