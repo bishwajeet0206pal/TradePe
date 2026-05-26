@@ -89,8 +89,8 @@ html, body {
 .sidebar {
   width: var(--sidebar-w);
   min-width: var(--sidebar-w);
-  background: var(--surface);
-  border-right: 1px solid var(--border);
+  background: #0B0F19;
+  border-right: 1px solid #1E293B;
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -99,7 +99,7 @@ html, body {
 
 .sidebar-brand {
   padding: var(--s6) var(--s5);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid #1E293B;
   cursor: pointer;
   transition: opacity var(--t);
 }
@@ -117,7 +117,7 @@ html, body {
 }
 .brand-tag {
   font-size: 11px;
-  color: var(--text-muted);
+  color: #94A3B8;
   margin-top: 2px;
   display: block;
   letter-spacing: 0.3px;
@@ -139,7 +139,7 @@ html, body {
   padding: 10px var(--s4);
   border-radius: var(--r-md);
   cursor: pointer;
-  color: var(--text-secondary);
+  color: #94A3B8;
   font-size: 14px;
   font-weight: 500;
   transition: all var(--t);
@@ -147,11 +147,11 @@ html, body {
   user-select: none;
   border: 1px solid transparent;
 }
-.nav-item:hover { background: var(--surface-2); color: var(--text-primary); }
+.nav-item:hover { background: #1E293B; color: #F8FAFC; }
 .nav-item.active {
-  background: var(--primary-glow);
-  color: var(--primary);
-  border-color: rgba(14, 165, 233, 0.2);
+  background: rgba(2, 132, 199, 0.15);
+  color: #38BDF8;
+  border-color: rgba(56, 189, 248, 0.3);
   font-weight: 600;
 }
 .nav-icon { width: 18px; height: 18px; flex-shrink: 0; }
@@ -169,14 +169,14 @@ html, body {
 
 .sidebar-footer {
   padding: var(--s4) var(--s5);
-  border-top: 1px solid var(--border);
+  border-top: 1px solid #1E293B;
   display: flex;
   align-items: center;
   gap: var(--s3);
   cursor: pointer;
   transition: background var(--t);
 }
-.sidebar-footer:hover { background: var(--surface-2); }
+.sidebar-footer:hover { background: #1E293B; }
 
 .avatar {
   width: 34px; height: 34px;
@@ -186,8 +186,8 @@ html, body {
   font-weight: 700; font-size: 13px; color: white;
   flex-shrink: 0;
 }
-.user-name  { font-size: 13px; font-weight: 600; color: var(--text-primary); display: block; }
-.user-co    { font-size: 11px; color: var(--text-muted); display: block; }
+.user-name  { font-size: 13px; font-weight: 600; color: #F8FAFC; display: block; }
+.user-co    { font-size: 11px; color: #94A3B8; display: block; }
 
 /* ============================================================
    5. MAIN CONTENT
