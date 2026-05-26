@@ -28,7 +28,18 @@ const app = (() => {
     noState: null,          // new-order form state
     onboarded: false,
     chatOpen: false,
-    chatMessages: []
+    chatMessages: [],
+    nudgeDismissed: false,
+    nudgeTargetOrderId: null,
+    adoptionGoal: {
+      tasks: {
+        createOrder: false,
+        sendPayment: false,
+        uploadDoc: false
+      },
+      unlocked: false,
+      claimed: false
+    }
   };
 
   // ============================================================
@@ -37,6 +48,15 @@ const app = (() => {
   function init() {
     S.orders = JSON.parse(JSON.stringify(DATA.orders));
     S.buyers = JSON.parse(JSON.stringify(DATA.buyers));
+
+    // Hydrate dismissed state from data flags
+    S.orders.forEach(o => {
+      if (o.lcDismissed || o.financingDismissed) {
+        S.dismissed[o.id] = {};
+        if (o.lcDismissed) S.dismissed[o.id].lc = true;
+        if (o.financingDismissed) S.dismissed[o.id].fin = true;
+      }
+    });
 
     // Show onboarding repositioning modal on every fresh load
     S.onboarded = false;
@@ -61,7 +81,7 @@ const app = (() => {
       'home': 'nav-home', 'order-detail': 'nav-orders',
       'new-order': 'nav-orders', 'lc-inquiry': 'nav-orders',
       'financing': 'nav-orders', 'documents': 'nav-documents',
-      'profile': 'nav-profile'
+      'analytics': 'nav-analytics', 'profile': 'nav-profile'
     };
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     const nav = map[id];
@@ -77,12 +97,15 @@ const app = (() => {
   // ============================================================
   function goHome()        { renderHome(); showScreen('home'); }
   function goDocuments()   { renderDocuments(); showScreen('documents'); }
+  function goAnalytics()   { renderAnalytics(); showScreen('analytics'); }
   function goProfile()     { showScreen('profile'); }
 
   // ============================================================
   // HOME SCREEN
   // ============================================================
   function renderHome() {
+    renderNudgeBanner();
+    renderAdoptionGoal();
     renderCounters();
     renderOrderCards();
     updateBadge();
@@ -119,7 +142,7 @@ const app = (() => {
       (urgencyRank[a.urgency] ?? 4) - (urgencyRank[b.urgency] ?? 4)
     );
 
-    const flags = { 'US': '🇺🇸', 'DE': '🇩🇪', 'AE': '🇦🇪' };
+    const flags = { 'US': '🇺🇸', 'DE': '🇩🇪', 'AE': '🇦🇪', 'GB': '🇬🇧', 'JP': '🇯🇵' };
 
     const rows = sorted.map(o => {
       const buyer = getBuyer(o.buyerId);
@@ -206,6 +229,239 @@ const app = (() => {
   }
 
   // ============================================================
+  // ANALYTICS PANEL
+  // ============================================================
+  function renderAnalytics() {
+    renderPipelineChart();
+    renderRevenueChart();
+    renderSavingsCard();
+    renderBuyerBreakdown();
+    renderMonthlyTrend();
+    renderPerformanceTable();
+  }
+
+  function renderPipelineChart() {
+    const el = document.getElementById('an-pipeline');
+    if (!el) return;
+    const stages = {
+      'order-created':      { label: 'Created',   color: '#94A3B8' },
+      'payment-pending':    { label: 'Pending',   color: '#F59E0B' },
+      'payment-confirmed':  { label: 'Confirmed', color: '#0EA5E9' },
+      'awaiting-documents': { label: 'Documents', color: '#8B5CF6' },
+      'overdue':            { label: 'Overdue',   color: '#EF4444' },
+      'completed':          { label: 'Completed', color: '#10B981' }
+    };
+    const counts = {};
+    S.orders.forEach(o => { counts[o.stage] = (counts[o.stage] || 0) + 1; });
+    const total = S.orders.length;
+    const R = 52, C = 2 * Math.PI * R;
+    let offset = 0;
+    let arcs = '';
+    let legend = '';
+    Object.entries(stages).forEach(([key, { label, color }]) => {
+      const count = counts[key] || 0;
+      if (count === 0) return;
+      const pct = count / total;
+      const dashLen = pct * C;
+      arcs += `<circle cx="60" cy="60" r="${R}" fill="none" stroke="${color}" stroke-width="12" stroke-dasharray="${dashLen} ${C - dashLen}" stroke-dashoffset="${-offset}" stroke-linecap="butt"/>`;
+      offset += dashLen;
+      legend += `<div class="donut-leg-row"><div class="donut-dot" style="background:${color}"></div><span>${label}</span><span class="donut-leg-val">${count}</span></div>`;
+    });
+    el.innerHTML = `
+      <div class="an-title">Order Pipeline</div>
+      <div class="donut-wrap">
+        <svg class="donut-svg" width="120" height="120" viewBox="0 0 120 120">
+          ${arcs}
+          <text x="60" y="56" text-anchor="middle" font-size="22" font-weight="800" fill="var(--text-primary)">${total}</text>
+          <text x="60" y="72" text-anchor="middle" font-size="10" fill="var(--text-muted)">orders</text>
+        </svg>
+        <div class="donut-legend">${legend}</div>
+      </div>`;
+  }
+
+  function renderRevenueChart() {
+    const el = document.getElementById('an-revenue');
+    if (!el) return;
+    const byBuyer = {};
+    S.orders.forEach(o => {
+      const b = getBuyer(o.buyerId);
+      const name = b ? b.name.split(' ')[0] : 'Other';
+      byBuyer[name] = (byBuyer[name] || 0) + o.amountUSD;
+    });
+    const entries = Object.entries(byBuyer).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    const max = Math.max(...entries.map(e => e[1]));
+    const colors = ['#0EA5E9', '#8B5CF6', '#F59E0B', '#10B981', '#EF4444'];
+    const bars = entries.map(([name, val], i) => {
+      const h = Math.round((val / max) * 80);
+      const kStr = val >= 1000 ? Math.round(val / 1000) + 'K' : val;
+      return `<div class="bar-col"><div class="bar-val">$${kStr}</div><div class="bar-fill" style="height:${h}px;background:${colors[i % colors.length]}"></div><div class="bar-label">${name}</div></div>`;
+    }).join('');
+    el.innerHTML = `
+      <div class="an-title">Revenue by Buyer</div>
+      <div class="bar-chart">${bars}</div>`;
+  }
+
+  function renderSavingsCard() {
+    const el = document.getElementById('an-savings');
+    if (!el) return;
+    const totalUSD = S.orders.reduce((s, o) => s + o.amountUSD, 0);
+    const fxSavings = Math.round((DATA.fxRate - DATA.bankRate) * totalUSD);
+    const paidOrders = S.orders.filter(o => o.paymentConfirmedDate).length;
+    const avgDays = paidOrders > 0 ? Math.round(S.orders.filter(o => o.paymentConfirmedDate).reduce((s) => s + 6, 0) / paidOrders) : 0;
+    el.innerHTML = `
+      <div class="an-title">FX Savings</div>
+      <div class="savings-big">\u20b9${fxSavings.toLocaleString('en-IN')}</div>
+      <div class="savings-sub">saved vs bank rates this month</div>
+      <div class="savings-row">
+        <div class="savings-stat">
+          <div class="savings-stat-val">$${(totalUSD / 1000).toFixed(0)}K</div>
+          <div class="savings-stat-label">Total Volume</div>
+        </div>
+        <div class="savings-stat">
+          <div class="savings-stat-val">\u20b9${DATA.fxRate}</div>
+          <div class="savings-stat-label">TradePe Rate</div>
+        </div>
+        <div class="savings-stat">
+          <div class="savings-stat-val">${avgDays}d</div>
+          <div class="savings-stat-label">Avg Payment</div>
+        </div>
+      </div>`;
+  }
+
+  function renderBuyerBreakdown() {
+    const el = document.getElementById('an-buyers');
+    if (!el) return;
+    const byBuyer = {};
+    S.orders.forEach(o => {
+      if (!byBuyer[o.buyerId]) byBuyer[o.buyerId] = { count: 0, total: 0 };
+      byBuyer[o.buyerId].count++;
+      byBuyer[o.buyerId].total += o.amountUSD;
+    });
+    const reliColors = { 'Excellent': '#10B981', 'Good': '#0EA5E9', null: '#94A3B8' };
+    const rings = Object.entries(byBuyer).map(([id, d]) => {
+      const b = getBuyer(id);
+      const name = b ? b.name.split(' ')[0] : '?';
+      const score = b ? b.reliabilityScore : null;
+      const col = reliColors[score] || '#94A3B8';
+      const pct = Math.min(d.count / 5, 1);
+      const C = 2 * Math.PI * 20;
+      return `<div class="buyer-ring">
+        <svg width="48" height="48" viewBox="0 0 48 48">
+          <circle cx="24" cy="24" r="20" fill="none" stroke="var(--border)" stroke-width="3"/>
+          <circle cx="24" cy="24" r="20" fill="none" stroke="${col}" stroke-width="3" stroke-dasharray="${pct * C} ${C}" stroke-dashoffset="${C * 0.25}" stroke-linecap="round"/>
+          <text x="24" y="28" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text-primary)">${d.count}</text>
+        </svg>
+        <div class="buyer-ring-name">${name}</div>
+      </div>`;
+    }).join('');
+    el.innerHTML = `
+      <div class="an-title">Buyer Activity</div>
+      <div class="buyer-rings">${rings}</div>`;
+  }
+
+  function renderMonthlyTrend() {
+    const el = document.getElementById('an-monthly');
+    if (!el) return;
+    // Simulated monthly data (last 6 months)
+    const months = [
+      { label: 'Jan', orders: 3, revenue: 42000 },
+      { label: 'Feb', orders: 5, revenue: 68000 },
+      { label: 'Mar', orders: 4, revenue: 55000 },
+      { label: 'Apr', orders: 7, revenue: 89000 },
+      { label: 'May', orders: 9, revenue: 124000 },
+      { label: 'Jun', orders: S.orders.length, revenue: S.orders.reduce((s, o) => s + o.amountUSD, 0) }
+    ];
+    const maxRev = Math.max(...months.map(m => m.revenue));
+    const W = 460, H = 120, padX = 10, padY = 10;
+    const stepX = (W - 2 * padX) / (months.length - 1);
+
+    // Area + line path
+    let pathD = '';
+    let areaD = `M ${padX} ${H - padY}`;
+    const points = months.map((m, i) => {
+      const x = padX + i * stepX;
+      const y = H - padY - ((m.revenue / maxRev) * (H - 2 * padY));
+      return { x, y, m };
+    });
+    points.forEach((p, i) => {
+      if (i === 0) { pathD += `M ${p.x} ${p.y}`; areaD += ` L ${p.x} ${p.y}`; }
+      else { pathD += ` L ${p.x} ${p.y}`; areaD += ` L ${p.x} ${p.y}`; }
+    });
+    areaD += ` L ${points[points.length - 1].x} ${H - padY} Z`;
+
+    const dots = points.map(p => `
+      <circle cx="${p.x}" cy="${p.y}" r="4" fill="#0EA5E9" stroke="white" stroke-width="2"/>
+      <text x="${p.x}" y="${p.y - 10}" text-anchor="middle" font-size="9" font-weight="700" fill="var(--text-primary)">$${Math.round(p.m.revenue / 1000)}K</text>
+    `).join('');
+
+    const labels = points.map(p => `
+      <text x="${p.x}" y="${H - 1}" text-anchor="middle" font-size="9" fill="var(--text-muted)" font-weight="600">${p.m.label}</text>
+    `).join('');
+
+    el.innerHTML = `
+      <div class="an-title">Monthly Revenue Trend</div>
+      <svg width="100%" viewBox="0 0 ${W} ${H + 12}" style="overflow:visible;">
+        <defs>
+          <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#0EA5E9" stop-opacity="0.2"/>
+            <stop offset="100%" stop-color="#0EA5E9" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <path d="${areaD}" fill="url(#areaGrad)"/>
+        <path d="${pathD}" fill="none" stroke="#0EA5E9" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        ${dots}
+        ${labels}
+      </svg>`;
+  }
+
+  function renderPerformanceTable() {
+    const el = document.getElementById('an-performance');
+    if (!el) return;
+    const byBuyer = {};
+    S.orders.forEach(o => {
+      if (!byBuyer[o.buyerId]) byBuyer[o.buyerId] = { orders: 0, total: 0, paid: 0, overdue: 0 };
+      byBuyer[o.buyerId].orders++;
+      byBuyer[o.buyerId].total += o.amountUSD;
+      if (o.paymentConfirmedDate) byBuyer[o.buyerId].paid++;
+      if (o.stage === 'overdue') byBuyer[o.buyerId].overdue++;
+    });
+    const rows = Object.entries(byBuyer).map(([id, d]) => {
+      const b = getBuyer(id);
+      const name = b ? b.name : id;
+      const country = b ? b.country : '—';
+      const score = b ? b.reliabilityScore : '—';
+      const scoreColor = score === 'Excellent' ? 'var(--success)' : score === 'Good' ? 'var(--primary)' : 'var(--text-muted)';
+      return `<tr>
+        <td style="font-weight:600;">${name}</td>
+        <td>${country}</td>
+        <td style="text-align:center;">${d.orders}</td>
+        <td style="text-align:right;">$${(d.total / 1000).toFixed(0)}K</td>
+        <td style="text-align:center;">${d.paid}/${d.orders}</td>
+        <td style="text-align:center;color:${d.overdue > 0 ? 'var(--error)' : 'var(--text-muted)'};">${d.overdue}</td>
+        <td style="color:${scoreColor};font-weight:600;">${score}</td>
+      </tr>`;
+    }).join('');
+    el.innerHTML = `
+      <div class="an-title">Buyer Performance</div>
+      <div class="table-container">
+        <table class="orders-table" style="font-size:12px;">
+          <thead>
+            <tr>
+              <th>Buyer</th>
+              <th>Country</th>
+              <th style="text-align:center;">Orders</th>
+              <th style="text-align:right;">Volume</th>
+              <th style="text-align:center;">Paid</th>
+              <th style="text-align:center;">Overdue</th>
+              <th>Reliability</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  }
+
+  // ============================================================
   // ORDER DETAIL
   // ============================================================
   function openOrder(id) {
@@ -233,17 +489,25 @@ const app = (() => {
             <div class="od-buyer">${buyer ? buyer.name : '—'}</div>
             <div class="od-sub">${buyer ? buyer.country : ''} &nbsp;·&nbsp; ${o.currency} &nbsp;·&nbsp; ${o.paymentTerms === 'advance' ? 'Advance payment' : 'Open account'}</div>
           </div>
+          <div class="od-header-action">
+            <span class="badge ${na.color === 'warn' ? 'badge-warn' : na.color === 'error' ? 'badge-error' : na.color === 'success' ? 'badge-success' : 'badge-primary'}">${stageTxt}</span>
+            <div class="od-na-text">${na.text}</div>
+            ${na.cta ? `<button class="btn btn-primary btn-sm" onclick="app.${na.fn}('${o.id}')">${na.cta}</button>` : ''}
+          </div>
           <div>
             <div class="od-amount">${fmtAmt(o.amountUSD, o.currency)}</div>
             <div class="od-amount-inr">&asymp; ${fmtINR(o.amountUSD)}</div>
           </div>
         </div>
         <div class="sub-tabs">
-          ${['overview','timeline','documents','payment','close'].map(t => `
+          ${['overview','documents','payment','close'].map(t => `
             <div class="sub-tab ${S.subTab === t ? 'active' : ''}" onclick="app.switchTab('${t}')">${tabLabel(t)}</div>
           `).join('')}
         </div>
       </div>`;
+
+    // Inline timeline (always visible)
+    renderInlineTimeline(o);
 
     // Next action banner
     const na = nextAction(o);
@@ -260,7 +524,7 @@ const app = (() => {
   }
 
   function tabLabel(t) {
-    return { overview: 'Overview', timeline: 'Timeline', documents: 'Documents', payment: 'Payment', close: 'Close Order' }[t] || t;
+    return { overview: 'Overview', documents: 'Documents', payment: 'Payment', close: 'Close Order' }[t] || t;
   }
 
   function switchTab(t) {
@@ -271,7 +535,6 @@ const app = (() => {
   function renderSubTab(o) {
     const renders = {
       overview:  renderOverview,
-      timeline:  renderTimeline,
       documents: renderDocs,
       payment:   renderPayment,
       close:     renderClose
@@ -297,12 +560,17 @@ const app = (() => {
     if (o.lcTriggered && !o.lcApplied) {
       const dismissed = (S.dismissed[o.id] || {}).lc;
       if (!dismissed) {
+        const premiumClass = S.adoptionGoal.claimed ? 'premium-unlocked' : '';
+        const feeText = S.adoptionGoal.claimed 
+          ? `<span style="color:#D97706;font-weight:700;margin-top:4px;display:inline-block;">✨ Premium Active &mdash; Waived application fee (Save ₹2,500)</span>` 
+          : `<span style="color:var(--lc);font-weight:600;margin-top:4px;display:inline-block;">\u2728 First LC processing fee waived &mdash; \u20b90 to get started.</span>`;
         lcCard = `
-          <div class="disc-card lc">
+          <div class="disc-card lc ${premiumClass}">
             <span class="disc-badge">&#128737;</span>
+            <div class="first-lc-inline">${S.adoptionGoal.claimed ? '✨ PREMIUM WAIVED' : '\ud83c\udf81 FIRST LC FREE'}</div>
             <div class="disc-tag">New product &mdash; Letter of Credit</div>
             <div class="disc-title">Protect your payment with an LC</div>
-            <div class="disc-desc">This is a new buyer. A Letter of Credit guarantees you get paid before you ship. Apply through TradePe's partner bank — no branch visit needed. Decision in 2 business days.</div>
+            <div class="disc-desc">This is a new buyer. A Letter of Credit guarantees you get paid before you ship. Apply through TradePe's partner bank &mdash; no branch visit needed. Decision in 2 business days.<br>${feeText}</div>
             <div class="disc-actions">
               <button class="btn btn-primary" onclick="app.openLC('${o.id}')">Apply for LC</button>
               <button class="disc-dismiss" onclick="app.dismissLC('${o.id}')">Proceed without LC</button>
@@ -319,40 +587,238 @@ const app = (() => {
         </div>`;
     }
 
-    let supportWidget = '';
-    if (o.lcTriggered || o.lcApplied) {
-      supportWidget = `
-        <div class="specialist-card" style="margin-bottom:var(--s6);">
-          <div class="spec-avatar">S</div>
-          <div style="flex:1;">
-            <div class="spec-online">🟢 Online • Sanjay Mehta</div>
-            <div class="spec-role">Dedicated Trade Finance Specialist</div>
-            <div class="spec-desc">Questions about this LC or worried about bank delays? Chat with Sanjay directly. Zero automated chatbots.</div>
-          </div>
-          <button class="btn btn-secondary btn-sm" onclick="app.toggleChat()">Chat Now</button>
-        </div>`;
-    }
+
+
+    // ---- Responsibility tracker (3-lane) ----
+    const respTracker = buildResponsibilityTracker(o, buyer);
 
     return `
       <div class="sub-panel active">
         ${lcCard}
-        ${supportWidget}
-        <div class="info-grid">
-          <div class="info-cell"><div class="info-label">Buyer</div><div class="info-val">${buyer ? buyer.name : '—'}</div></div>
-          <div class="info-cell"><div class="info-label">Country</div><div class="info-val">${buyer ? buyer.country : '—'}</div></div>
-          <div class="info-cell"><div class="info-label">Invoice</div><div class="info-val mono">${o.invoiceNumber}</div></div>
-          <div class="info-cell"><div class="info-label">Payment terms</div><div class="info-val">${o.paymentTerms === 'advance' ? 'Advance payment' : 'Open account'}</div></div>
-          <div class="info-cell"><div class="info-label">Amount</div><div class="info-val">${fmtAmt(o.amountUSD, o.currency)}</div></div>
-          <div class="info-cell"><div class="info-label">INR equivalent</div><div class="info-val">${fmtINR(o.amountUSD)}</div></div>
-          <div class="info-cell"><div class="info-label">Stage</div><div class="info-val"><span class="badge ${stageCls}">${stageTxt}</span></div></div>
-          ${o.daysRemaining !== undefined && o.stage === 'payment-pending' ? `<div class="info-cell"><div class="info-label">Days remaining</div><div class="info-val text-warning">${o.daysRemaining} days</div></div>` : ''}
-          ${o.paymentConfirmedDate ? `<div class="info-cell"><div class="info-label">Payment received</div><div class="info-val text-success">${o.paymentConfirmedDate}</div></div>` : ''}
-          ${o.shippedDate ? `<div class="info-cell"><div class="info-label">Goods shipped</div><div class="info-val">${o.shippedDate}</div></div>` : ''}
+        <div class="resp-section-label">Who\u2019s doing what</div>
+        ${respTracker}
+      </div>`;
+  }
+
+  function buildResponsibilityTracker(o, buyer) {
+    const buyerName = buyer ? buyer.name.split(' ')[0] : 'Buyer';
+    const buyerInitial = buyer ? buyer.name.charAt(0) : 'B';
+    const isOpen = o.paymentTerms === 'open';
+    const termsLabel = isOpen ? 'Open Account (pay later)' : 'Advance Payment (pay first)';
+    const lcPending = o.lcTriggered && !o.lcApplied && !(S.dismissed[o.id] || {}).lc;
+    const lcUnderReview = o.lcApplied && !o.lcIssued;
+
+    const done = (text) => `<div class="resp-action done"><span class="resp-action-icon">\u2705</span><span class="resp-action-text">${text}</span></div>`;
+    const pending = (text) => `<div class="resp-action pending"><span class="resp-action-icon">\ud83d\udfe0</span><span class="resp-action-text">${text}</span></div>`;
+    const waiting = (text) => `<div class="resp-action waiting"><span class="resp-action-icon">\u23f3</span><span class="resp-action-text">${text}</span></div>`;
+    const active = (text) => `<div class="resp-action pending"><span class="resp-action-icon">\ud83d\udd04</span><span class="resp-action-text">${text}</span></div>`;
+    const blocked = (text) => `<div class="resp-action waiting"><span class="resp-action-icon">\ud83d\udeab</span><span class="resp-action-text">${text}</span></div>`;
+    const info = (text) => `<div class="resp-action done" style="font-style:italic;"><span class="resp-action-icon">\u2139\ufe0f</span><span class="resp-action-text">${text}</span></div>`;
+    const tip = (text, onclick) => `<div class="resp-action-tip" ${onclick ? `onclick="${onclick}" style="cursor:pointer;"` : ''}><span class="resp-tip-icon">\ud83d\udca1</span><span class="resp-tip-text">${text}</span><span class="resp-tip-arrow">\u2192</span></div>`;
+
+    let exporter = '', platform = '', buyerCol = '';
+    const allDocs = o.documents.every(d => d.uploaded);
+    const missingDocs = o.documents.filter(d => !d.uploaded).length;
+
+    switch (o.stage) {
+      case 'order-created':
+        // Exporter
+        exporter = done('Order created');
+        if (isOpen && lcPending) {
+          exporter += pending('Apply for LC (recommended for new buyer)');
+          exporter += waiting('Send payment request (after LC)');
+        } else if (isOpen && lcUnderReview) {
+          exporter += done('LC application submitted');
+          exporter += waiting('Send payment request (after LC issued)');
+        } else {
+          exporter += pending('Send payment request to buyer');
+        }
+        // TradePe
+        platform = done('FX rate locked at \u20b9' + DATA.fxRate);
+        if (lcPending) platform += active('LC product available \u2014 awaiting your decision');
+        if (lcUnderReview) platform += active('Reviewing LC with partner bank');
+        platform += active('Ready to send request when you are');
+        if (!lcPending && !lcUnderReview && isOpen) platform += tip('LC available \u2014 protect payments for open accounts', "app.openHelp('lc')");
+        // Buyer
+        buyerCol = info('Payment terms: ' + termsLabel);
+        buyerCol += waiting('Waiting for payment request');
+        break;
+
+      case 'payment-pending':
+        // Exporter
+        exporter = done('Order created') + done('Payment request sent');
+        if (isOpen) {
+          // Open account: exporter CAN ship before payment, but LC may block it
+          if (lcUnderReview) {
+            exporter += waiting('Wait for LC to be issued by bank');
+            exporter += blocked('Cannot ship until LC is issued');
+          } else if (lcPending) {
+            exporter += pending('Apply for LC before shipping (recommended)');
+          } else {
+            exporter += waiting('Waiting for buyer payment');
+            exporter += pending('Prepare goods for shipment');
+          }
+          if (!allDocs) exporter += pending('Upload ' + missingDocs + ' document' + (missingDocs > 1 ? 's' : '') + ' (can start early)');
+        } else {
+          // Advance: must wait for payment before shipping
+          exporter += waiting('Waiting for buyer to pay first');
+          exporter += blocked('Cannot ship until payment received');
+          if (!allDocs) exporter += waiting('Documents upload after shipment');
+        }
+        // TradePe
+        platform = done('FX rate locked') + done('Payment request delivered');
+        platform += active('Tracking buyer activity');
+        platform += active('Auto-reminders scheduled');
+        if (lcUnderReview) platform += active('LC under review with partner bank');
+        if (isOpen && o.financingOffered && !o.financingApplied) {
+          platform += tip('Get paid today \u2014 invoice financing at 1.5%', "app.openHelp('financing')");
+        }
+        // Buyer
+        buyerCol = info('Payment terms: ' + termsLabel);
+        buyerCol += done('Received payment request');
+        buyerCol += pending('Make payment of ' + fmtAmt(o.amountUSD, o.currency));
+        if (o.daysRemaining !== undefined) {
+          buyerCol += `<div class="resp-action pending"><span class="resp-action-icon">\u23f0</span><span class="resp-action-text">${o.daysRemaining} days remaining</span></div>`;
+        }
+        break;
+
+      case 'payment-confirmed':
+      case 'awaiting-documents':
+        exporter = done('Order created') + done('Payment request sent');
+        exporter += done('Payment received \u2014 ' + (o.paymentConfirmedDate || ''));
+        if (o.shippedDate) {
+          exporter += done('Goods shipped \u2014 ' + o.shippedDate);
+          if (!allDocs) exporter += pending('Upload ' + missingDocs + ' remaining document' + (missingDocs > 1 ? 's' : ''));
+          else exporter += done('All documents uploaded');
+        } else {
+          exporter += pending('Ship goods to buyer');
+          exporter += waiting('Upload documents after shipment');
+        }
+        // TradePe
+        platform = done('FX rate locked') + done('Payment verified & INR credited');
+        if (o.shippedDate) platform += done('Shipment recorded');
+        else platform += active('Waiting for you to ship');
+        platform += active('Monitoring document uploads');
+        if (o.lcApplied) platform += done('LC secured \u2014 payment guaranteed');
+        if (!allDocs) platform += tip('Auto-checks ensure 99.2% first-submission pass', "app.openHelp('documents')");
+        // Buyer
+        buyerCol = info('Payment terms: ' + termsLabel);
+        buyerCol += done('Payment made \u2014 ' + (o.paymentConfirmedDate || ''));
+        if (o.shippedDate) buyerCol += waiting('Goods in transit \u2014 awaiting delivery');
+        else buyerCol += waiting('Waiting for exporter to ship');
+        break;
+
+      case 'overdue':
+        exporter = done('Order created') + done('Payment request sent');
+        exporter += pending('Payment is overdue \u2014 follow up');
+        if (isOpen) exporter += blocked('Do not ship until payment resolved');
+        // TradePe
+        platform = done('FX rate locked') + done('Payment request delivered');
+        platform += active('Sending overdue reminders to buyer');
+        platform += active('Escalating through all channels');
+        if (o.financingOffered && !o.financingApplied) {
+          platform += tip('Don\u2019t wait \u2014 get paid now with invoice financing', "app.openHelp('financing')");
+        }
+        // Buyer
+        buyerCol = info('Payment terms: ' + termsLabel);
+        buyerCol += done('Received payment request');
+        buyerCol += pending('Payment overdue \u2014 immediate action needed');
+        break;
+
+      case 'completed':
+        exporter = done('Order created') + done('Payment request sent') + done('Payment received');
+        exporter += done('Goods shipped') + done('Documents uploaded') + done('Order closed');
+        platform = done('FX rate locked') + done('Payment verified & INR credited');
+        platform += done('Documents processed') + done('Buyer profile updated');
+        if (o.lcApplied) platform += done('LC completed successfully');
+        platform += tip('Buyer memory saved \u2014 next order will be faster');
+        buyerCol = info('Payment terms: ' + termsLabel);
+        buyerCol += done('Payment made') + done('Goods received');
+        break;
+
+      default:
+        exporter = done('Order created');
+        platform = active('Monitoring');
+        buyerCol = waiting('No action yet');
+    }
+
+    const flowArrow = `
+      <div class="resp-flow">
+        <div class="resp-flow-arrow">
+          <div class="resp-flow-dot"></div>
+          <div class="resp-flow-line"></div>
+          <div class="resp-flow-icon">\u21c4</div>
+          <div class="resp-flow-line"></div>
+          <div class="resp-flow-dot"></div>
+        </div>
+      </div>`;
+
+    return `
+      <div class="resp-tracker">
+        <div class="resp-lane exporter">
+          <div class="resp-lane-header">
+            <div class="resp-avatar">A</div>
+            <div>
+              <div class="resp-role">You (Exporter)</div>
+              <div class="resp-role-sub">Ankita \u2022 Silk Exports</div>
+            </div>
+          </div>
+          <div class="resp-actions">${exporter}</div>
+        </div>
+        ${flowArrow}
+        <div class="resp-lane platform">
+          <div class="resp-lane-header">
+            <div class="resp-avatar">T</div>
+            <div>
+              <div class="resp-role">TradePe</div>
+              <div class="resp-role-sub">Managing your order</div>
+            </div>
+          </div>
+          <div class="resp-actions">${platform}</div>
+        </div>
+        ${flowArrow}
+        <div class="resp-lane buyer">
+          <div class="resp-lane-header">
+            <div class="resp-avatar">${buyerInitial}</div>
+            <div>
+              <div class="resp-role">${buyerName} (Buyer)</div>
+              <div class="resp-role-sub">${buyer ? buyer.country : ''}</div>
+            </div>
+          </div>
+          <div class="resp-actions">${buyerCol}</div>
         </div>
       </div>`;
   }
 
-  // ---- TIMELINE ----
+  // ---- INLINE TIMELINE (always visible, compact horizontal) ----
+  function renderInlineTimeline(o) {
+    const el = document.getElementById('od-timeline');
+    if (!el) return;
+
+    const steps = o.timeline.map((s, i) => {
+      const isLast = i === o.timeline.length - 1;
+      let bubbleClass = '';
+      let iconHTML = i + 1;
+      if (s.status === 'done') { bubbleClass = 'done'; iconHTML = '&#10003;'; }
+      else if (s.status === 'current') { bubbleClass = 'current'; iconHTML = '&#9679;'; }
+      else { bubbleClass = 'locked'; }
+
+      return `
+        <div class="itl-step ${bubbleClass}">
+          <div class="itl-bubble">${iconHTML}</div>
+          <div class="itl-label">${s.step}</div>
+          <div class="itl-date">${s.date || (s.status === 'current' ? 'Now' : '—')}</div>
+          ${!isLast ? `<div class="itl-connector ${s.status === 'done' ? 'done' : ''}"></div>` : ''}
+        </div>`;
+    }).join('');
+
+    el.innerHTML = `
+      <div class="inline-timeline-wrap">
+        <div class="inline-timeline">${steps}</div>
+      </div>`;
+  }
+
+  // ---- FULL TIMELINE (kept for reference rendering) ----
   function renderTimeline(o) {
     const icons = { done: '&#10003;', current: '&#9679;' };
     const steps = o.timeline.map((s, i) => `
@@ -457,12 +923,17 @@ const app = (() => {
     if (o.financingOffered && !o.financingApplied && o.stage === 'payment-pending') {
       const dismissed = (S.dismissed[o.id] || {}).fin;
       if (!dismissed) {
+        const premiumClass = S.adoptionGoal.claimed ? 'premium-unlocked' : '';
+        const feeDesc = S.adoptionGoal.claimed
+          ? `TradePe advances your invoice amount today at <strong style="color:#D97706;">0% transaction fee</strong> (Premium active: waived 1.5% fee). Your buyer repays TradePe directly.`
+          : `TradePe advances your invoice amount today at just 1.5% fee. Your buyer repays TradePe directly — you don't have to chase payment at all.`;
         finCard = `
-          <div class="disc-card fin" style="margin-top:var(--s6);">
+          <div class="disc-card fin ${premiumClass}" style="margin-top:var(--s6);">
             <span class="disc-badge">&#9889;</span>
+            <div class="first-lc-inline" style="background:#F59E0B;color:white;display:${S.adoptionGoal.claimed ? 'inline-block' : 'none'};margin-bottom:var(--s3);">✨ 0% FINANCING ACTIVE</div>
             <div class="disc-tag">Invoice Financing &mdash; Get paid now</div>
             <div class="disc-title">Don't want to wait ${o.daysRemaining || o.dueDays || 14} days?</div>
-            <div class="disc-desc">TradePe advances your invoice amount today at just 1.5% fee. Your buyer repays TradePe directly — you don't have to chase payment at all.</div>
+            <div class="disc-desc">${feeDesc}</div>
             <div class="disc-actions">
               <button class="btn btn-primary" onclick="app.openFin('${o.id}')">Get paid now</button>
               <button class="disc-dismiss" onclick="app.dismissFin('${o.id}')">I'll wait</button>
@@ -551,17 +1022,43 @@ const app = (() => {
   // NEXT ACTION ENGINE (pure function — no side effects)
   // ============================================================
   function nextAction(o) {
+    const isOpen = o.paymentTerms === 'open';
+    const lcPending = o.lcTriggered && !o.lcApplied && !(S.dismissed[o.id] || {}).lc;
+    const lcUnderReview = o.lcApplied && !o.lcIssued;
+
     switch (o.stage) {
       case 'order-created':
+        if (isOpen && lcPending) {
+          return { text: 'New buyer on open terms \u2014 apply for LC first to protect your payment', cta: 'View LC Option', fn: 'switchTab', color: 'warning', tabArg: 'overview' };
+        }
+        if (isOpen && lcUnderReview) {
+          return { text: 'LC is under review by partner bank. Payment request can be sent after LC is issued.', cta: null, fn: null, color: 'warning' };
+        }
         return { text: 'Review invoice details and send payment request to your buyer', cta: 'Go to Payment', fn: 'goPaymentTab', color: 'warning' };
       case 'payment-pending':
-        return { text: `Waiting for buyer payment — ${o.daysRemaining || '?'} days remaining`, cta: null, fn: null, color: 'warning' };
+        if (isOpen && lcPending) {
+          return { text: 'Payment request sent. Strongly consider LC before shipping \u2014 this is a new buyer on open terms.', cta: 'Apply for LC', fn: 'switchTab', color: 'warning', tabArg: 'overview' };
+        }
+        if (lcUnderReview) {
+          return { text: 'Payment pending. LC under review \u2014 do not ship until LC is issued.', cta: null, fn: null, color: 'warning' };
+        }
+        return { text: `Waiting for buyer payment \u2014 ${o.daysRemaining || '?'} days remaining`, cta: null, fn: null, color: 'warning' };
       case 'payment-overdue':
-        return { text: 'Payment is overdue — send a reminder to your buyer now', cta: 'Send reminder', fn: 'sendReminder', color: 'error' };
-      case 'payment-confirmed':
-        return { text: 'Payment received — now ship your goods and mark shipment date', cta: 'Mark as shipped', fn: 'markShipped', color: 'success' };
-      case 'awaiting-documents':
-        return { text: 'Upload your Bill of Lading and remaining documents to close this order', cta: 'Upload documents', fn: 'goDocsTab', color: 'primary' };
+        return { text: 'Payment is overdue \u2014 send a reminder to your buyer now', cta: 'Send reminder', fn: 'sendReminder', color: 'error' };
+      case 'payment-confirmed': {
+        const missingDocs = o.documents.filter(d => !d.uploaded).length;
+        if (!o.shippedDate) {
+          return { text: 'Payment received! Ship your goods and mark shipment date', cta: 'Mark as shipped', fn: 'markShipped', color: 'success' };
+        }
+        if (missingDocs > 0) {
+          return { text: `Goods shipped. Upload ${missingDocs} remaining document${missingDocs > 1 ? 's' : ''} to close this order.`, cta: 'Upload documents', fn: 'goDocsTab', color: 'primary' };
+        }
+        return { text: 'All done! You can now close this order.', cta: 'Close Order', fn: 'switchTab', color: 'success', tabArg: 'close' };
+      }
+      case 'awaiting-documents': {
+        const missing = o.documents.filter(d => !d.uploaded).length;
+        return { text: `Upload ${missing > 0 ? missing : 'your'} remaining document${missing > 1 ? 's' : ''} to close this order`, cta: 'Upload documents', fn: 'goDocsTab', color: 'primary' };
+      }
       case 'completed':
         return { text: 'This order is complete and archived', cta: null, fn: null, color: 'success' };
       default:
@@ -593,6 +1090,8 @@ const app = (() => {
     ];
     if (o.financingOffered) logEvent('FIN_DISCOVERY', id);
     showToast('Payment request sent to buyer via email and WhatsApp');
+    S.adoptionGoal.tasks.sendPayment = true;
+    logEvent('TASK_PAYMENT_SENT', id);
     renderOrderDetail();
   }
 
@@ -658,6 +1157,8 @@ const app = (() => {
       } else {
         showToast(`${doc.name} uploaded successfully`);
       }
+      S.adoptionGoal.tasks.uploadDoc = true;
+      logEvent('TASK_DOC_UPLOADED', docId);
       
       if (S.screen === 'documents') {
         renderDocuments();
@@ -925,6 +1426,8 @@ const app = (() => {
       documents: docs.map((d, i) => ({ id: `doc-${id}-${i}`, name: d, uploaded: false, required: true }))
     };
     S.orders.push(newOrder);
+    S.adoptionGoal.tasks.createOrder = true;
+    logEvent('TASK_ORDER_CREATED', id);
 
     if (triggerLC) {
       logEvent('LC_DISCOVERY', id);
@@ -990,7 +1493,74 @@ const app = (() => {
     localStorage.removeItem('tradepe_onboarded_v2');
     document.getElementById('repositioning-modal').style.display = 'flex';
     logEvent('REPOSITION_DISCOVERY', 'onboarding');
+    
+    // Reset adoption goal
+    S.adoptionGoal = {
+      tasks: {
+        createOrder: false,
+        sendPayment: false,
+        uploadDoc: false
+      },
+      unlocked: false,
+      claimed: false
+    };
+    
+    // Hide premium badges
+    document.getElementById('user-premium-badge').style.display = 'none';
+    document.getElementById('header-premium-badge').style.display = 'none';
+    
     goHome();
+  }
+
+  // ============================================================
+  // CONTEXTUAL NUDGE BANNER
+  // ============================================================
+  function renderNudgeBanner() {
+    const nudgeEl = document.getElementById('home-nudge');
+    if (!nudgeEl || S.nudgeDismissed) { if (nudgeEl) nudgeEl.style.display = 'none'; return; }
+
+    // Find orders with new buyers that have LC triggered but not applied and not dismissed
+    const eligibleOrders = S.orders.filter(o => {
+      if (o.stage === 'completed') return false;
+      if (!o.lcTriggered) return false;
+      if (o.lcApplied) return false;
+      const d = S.dismissed[o.id] || {};
+      if (d.lc) return false;
+      const buyer = getBuyer(o.buyerId);
+      return buyer && buyer.isNew;
+    });
+
+    if (eligibleOrders.length === 0) {
+      nudgeEl.style.display = 'none';
+      return;
+    }
+
+    S.nudgeTargetOrderId = eligibleOrders[0].id;
+    document.getElementById('nudge-count').textContent = eligibleOrders.length;
+    const ctaBtn = document.getElementById('nudge-cta');
+    if (ctaBtn) ctaBtn.textContent = eligibleOrders.length === 1 ? 'View Order' : `View ${eligibleOrders.length} Orders`;
+    nudgeEl.style.display = 'flex';
+    logEvent('NUDGE_SHOWN', S.nudgeTargetOrderId);
+  }
+
+  function nudgeGoToLC() {
+    if (S.nudgeTargetOrderId) {
+      logEvent('NUDGE_CLICKED', S.nudgeTargetOrderId);
+      openOrder(S.nudgeTargetOrderId);
+    }
+  }
+
+  function dismissNudge() {
+    S.nudgeDismissed = true;
+    const nudgeEl = document.getElementById('home-nudge');
+    if (nudgeEl) {
+      nudgeEl.style.animation = 'none';
+      nudgeEl.style.opacity = '0';
+      nudgeEl.style.transform = 'translateY(-12px)';
+      nudgeEl.style.transition = 'all 0.3s ease';
+      setTimeout(() => { nudgeEl.style.display = 'none'; }, 300);
+    }
+    logEvent('NUDGE_DISMISSED', S.nudgeTargetOrderId);
   }
 
   // ============================================================
@@ -1056,6 +1626,97 @@ const app = (() => {
       S.chatMessages.push({ sender: 'specialist', text: reply });
       renderChat();
     }, 1200);
+  }
+
+  // ============================================================
+  // ADOPTION GOALS & PREMIUM UNLOCKS
+  // ============================================================
+  function renderAdoptionGoal() {
+    const el = document.getElementById('adoption-goal-container');
+    if (!el) return;
+
+    if (S.adoptionGoal.claimed) {
+      document.getElementById('user-premium-badge').style.display = 'inline-block';
+      document.getElementById('header-premium-badge').style.display = 'inline-flex';
+      el.innerHTML = `
+        <div class="goal-card" style="border-color: #F59E0B; background: linear-gradient(135deg, var(--surface), rgba(245, 158, 11, 0.02));">
+          <div class="goal-header">
+            <div class="goal-title">👑 TradePe Premium Active</div>
+            <span class="goal-reward-tag" style="background: rgba(245, 158, 11, 0.1); color: #D97706;">Unlocked</span>
+          </div>
+          <div class="goal-desc">✨ Congratulations! Waived Letter of Credit fees and 0% Invoice Financing transaction fees are now active on your Jaipur Textiles Export account.</div>
+        </div>`;
+      return;
+    }
+
+    const tasks = S.adoptionGoal.tasks;
+    const completedList = [tasks.createOrder, tasks.sendPayment, tasks.uploadDoc];
+    const completedCount = completedList.filter(Boolean).length;
+    const percent = Math.round((completedCount / 3) * 100);
+
+    if (completedCount === 3 && !S.adoptionGoal.unlocked) {
+      S.adoptionGoal.unlocked = true;
+    }
+
+    if (S.adoptionGoal.unlocked) {
+      el.innerHTML = `
+        <div class="goal-card" style="border-color: #7C3AED; background: linear-gradient(135deg, var(--surface), rgba(124, 92, 246, 0.02));">
+          <div class="goal-unlocked-panel">
+            <div class="goal-unlocked-title">🎉 Milestone Goal Achieved!</div>
+            <p class="goal-desc" style="text-align:center; margin-bottom:var(--s4);">You have completed all onboarding tasks. Ready to claim 30 days of free TradePe Premium (Waived LC fees, 0% Financing)?</p>
+            <button class="btn-claim-premium" onclick="app.claimPremium()">
+              ✨ Claim Free Premium Month
+            </button>
+          </div>
+        </div>`;
+      return;
+    }
+
+    el.innerHTML = `
+      <div class="goal-card">
+        <div class="goal-header">
+          <div class="goal-title">🎁 Onboarding Goal: Unlock TradePe Premium</div>
+          <span class="goal-reward-tag">30 Days Free</span>
+        </div>
+        <div class="goal-desc">
+          Complete 3 key actions on the Command Center to unlock <strong>30 days of waived Letter of Credit processing fees</strong> and <strong>0% Invoice Financing transaction fees</strong> (Save up to ₹25,000)!
+        </div>
+        
+        <div class="goal-progress-container">
+          <div class="goal-progress-text">
+            <span>Workflow Completion Progress</span>
+            <span>${completedCount} of 3 completed (${percent}%)</span>
+          </div>
+          <div class="goal-progress-bar">
+            <div class="goal-progress-fill" style="width: ${percent}%;"></div>
+          </div>
+        </div>
+
+        <div class="goal-list">
+          <div class="goal-item ${tasks.createOrder ? 'done' : ''}">
+            <div class="goal-check">${tasks.createOrder ? '✓' : ''}</div>
+            <span class="goal-label">Create an export order</span>
+          </div>
+          <div class="goal-item ${tasks.sendPayment ? 'done' : ''}">
+            <div class="goal-check">${tasks.sendPayment ? '✓' : ''}</div>
+            <span class="goal-label">Send a payment request</span>
+          </div>
+          <div class="goal-item ${tasks.uploadDoc ? 'done' : ''}">
+            <div class="goal-check">${tasks.uploadDoc ? '✓' : ''}</div>
+            <span class="goal-label">Upload any document</span>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function claimPremium() {
+    S.adoptionGoal.claimed = true;
+    S.adoptionGoal.unlocked = true;
+    logEvent('PREMIUM_CLAIMED', 'adoption_goal');
+    showToast('TradePe Premium Waived Fees Activated!', '👑');
+    document.getElementById('user-premium-badge').style.display = 'inline-block';
+    document.getElementById('header-premium-badge').style.display = 'inline-flex';
+    renderHome();
   }
 
   // ============================================================
@@ -1126,6 +1787,125 @@ const app = (() => {
   function showFunnelToast(msg) { showToast('📊 ' + msg, ''); }
 
   // ============================================================
+  // HELP PROCESS EXPLAINER
+  // ============================================================
+  const HELP_TOPICS = {
+    lc: {
+      icon: '\ud83d\udee1\ufe0f',
+      title: 'How does a Letter of Credit work?',
+      subtitle: 'A simple guarantee that you get paid. Here\u2019s the entire process \u2014 start to finish.',
+      steps: [
+        { icon: '\ud83d\udcdd', label: 'You apply', desc: 'Fill a short form on TradePe. Takes 5 minutes.', time: '5 min' },
+        { icon: '\ud83c\udfe6', label: 'Bank reviews', desc: 'Our partner bank checks buyer details. You don\u2019t visit any branch.', time: '1\u20132 days' },
+        { icon: '\u2705', label: 'LC issued', desc: 'The bank guarantees your payment. You\u2019re now protected.', time: 'Instant' },
+        { icon: '\ud83d\udea2', label: 'You ship goods', desc: 'Ship with confidence \u2014 your payment is already guaranteed.', time: 'Your pace' },
+        { icon: '\ud83d\udcb0', label: 'You get paid', desc: 'Bank pays you directly. No chasing the buyer.', time: '3\u20135 days' }
+      ],
+      savings: {
+        old: { label: 'Going to your bank', val: '7\u201314 days', detail: '3+ branch visits, paperwork, follow-ups, \u20b95,000\u201315,000 in fees' },
+        new: { label: 'Using TradePe', val: '2\u20133 days', detail: 'Zero branch visits, 5-min form, first LC free (\u20b90 fee)' }
+      },
+      youSave: 'Save 5\u201311 days + \u20b95,000\u201315,000 in bank fees'
+    },
+    financing: {
+      icon: '\u26a1',
+      title: 'How does Invoice Financing work?',
+      subtitle: 'Get paid today instead of waiting 14\u201360 days. Here\u2019s how it works.',
+      steps: [
+        { icon: '\ud83d\udce8', label: 'You apply', desc: 'One click from your order page. No paperwork.', time: '1 min' },
+        { icon: '\ud83d\udd0d', label: 'Instant check', desc: 'TradePe reviews your invoice and buyer history.', time: '4 hours' },
+        { icon: '\ud83d\udcb8', label: 'Money in your account', desc: 'Full invoice amount minus 1.5% fee, sent to your bank.', time: 'Same day' },
+        { icon: '\ud83e\udd1d', label: 'Buyer pays TradePe', desc: 'Your buyer repays TradePe directly. You\u2019re done.', time: 'On due date' }
+      ],
+      savings: {
+        old: { label: 'Waiting for buyer', val: '14\u201360 days', detail: 'Cash stuck, can\u2019t fulfil new orders, manual follow-ups' },
+        new: { label: 'Using TradePe', val: 'Same day', detail: '1.5% fee, no chasing buyer, money in 4 hours' }
+      },
+      youSave: 'Get paid 14\u201360 days earlier + zero follow-up effort'
+    },
+    payment: {
+      icon: '\ud83d\udcb8',
+      title: 'How does Payment Collection work?',
+      subtitle: 'Send a payment request to your buyer in one click. Here\u2019s the full flow.',
+      steps: [
+        { icon: '\ud83d\udce4', label: 'You send request', desc: 'One-click from TradePe. Buyer gets an email with payment link.', time: '1 min' },
+        { icon: '\ud83d\udc41\ufe0f', label: 'Buyer views it', desc: 'You can track when they open it \u2014 live activity updates.', time: 'Real-time' },
+        { icon: '\ud83d\udcb3', label: 'Buyer pays', desc: 'Buyer pays in their currency. TradePe handles the conversion.', time: '1\u20137 days' },
+        { icon: '\ud83c\udfe6', label: 'INR in your bank', desc: 'You get INR at TradePe\u2019s better FX rate. \u20b91.4 more per dollar vs banks.', time: 'Instant' }
+      ],
+      savings: {
+        old: { label: 'Traditional bank wire', val: '5\u20137 days', detail: 'Poor FX rates, \u20b918\u201325 per dollar less, manual SWIFT tracking' },
+        new: { label: 'Using TradePe', val: '1\u20133 days', detail: 'Better FX rate, live tracking, auto-reminders to buyer' }
+      },
+      youSave: 'Save 3\u20134 days + \u20b91.4 more per dollar on every payment'
+    },
+    documents: {
+      icon: '\ud83d\udccb',
+      title: 'How does Document Management work?',
+      subtitle: 'Upload once, we handle the rest. No customs rejections.',
+      steps: [
+        { icon: '\ud83d\udcc4', label: 'Smart checklist', desc: 'TradePe shows exactly which documents your buyer\u2019s country needs.', time: 'Instant' },
+        { icon: '\u2b06\ufe0f', label: 'You upload', desc: 'Drag and drop your documents. We check formatting automatically.', time: '2 min' },
+        { icon: '\ud83d\udd0d', label: 'Auto-verified', desc: 'We validate against country-specific requirements. Flag errors instantly.', time: 'Instant' },
+        { icon: '\u2705', label: 'Customs-ready', desc: 'Your documents are compliant and ready for shipment clearance.', time: 'Done' }
+      ],
+      savings: {
+        old: { label: 'Manual process', val: '2\u20133 days', detail: 'Guessing which docs are needed, rejection risk, re-submissions' },
+        new: { label: 'Using TradePe', val: '10 min', detail: 'Country-specific checklists, auto-validation, 99.2% first-time pass' }
+      },
+      youSave: 'Save 2\u20133 days + zero customs rejections'
+    }
+  };
+
+  function openHelp(topic) {
+    const t = HELP_TOPICS[topic];
+    if (!t) return;
+    const modal = document.getElementById('help-modal');
+    const content = document.getElementById('help-content');
+    if (!modal || !content) return;
+
+    const stepsHTML = t.steps.map(s => `
+      <div class="help-step">
+        <div class="help-step-num">${s.icon}</div>
+        <div class="help-step-body">
+          <div class="help-step-label">${s.label}</div>
+          <div class="help-step-desc">${s.desc}</div>
+          <div class="help-step-time">\u23f1 ${s.time}</div>
+        </div>
+      </div>`).join('');
+
+    content.innerHTML = `
+      <div class="help-header-icon">${t.icon}</div>
+      <div class="help-title">${t.title}</div>
+      <div class="help-subtitle">${t.subtitle}</div>
+      <div class="help-steps">${stepsHTML}</div>
+      <div class="help-savings">
+        <div class="help-save-card old">
+          <div class="help-save-label">${t.savings.old.label}</div>
+          <div class="help-save-val">${t.savings.old.val}</div>
+          <div class="help-save-detail">${t.savings.old.detail}</div>
+        </div>
+        <div class="help-save-card new">
+          <div class="help-save-label">${t.savings.new.label}</div>
+          <div class="help-save-val">${t.savings.new.val}</div>
+          <div class="help-save-detail">${t.savings.new.detail}</div>
+        </div>
+      </div>
+      <div class="help-you-save">
+        <div class="help-you-save-title">You save</div>
+        <div class="help-you-save-val">${t.youSave}</div>
+      </div>`;
+
+    modal.style.display = 'flex';
+    logEvent('HELP_OPENED', topic);
+  }
+
+  function closeHelp() {
+    const modal = document.getElementById('help-modal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  // ============================================================
   // BOOT
   // ============================================================
   document.addEventListener('DOMContentLoaded', init);
@@ -1134,7 +1914,7 @@ const app = (() => {
   // PUBLIC API
   // ============================================================
   return {
-    goHome, goDocuments, goProfile,
+    goHome, goDocuments, goAnalytics, goProfile,
     openOrder, switchTab,
     sendRequest, simulatePaid, markShipped,
     uploadDoc, removeDoc,
@@ -1144,7 +1924,10 @@ const app = (() => {
     startNewOrder, onBuyerInput, selectBuyer,
     noStep1Continue, noBack, onAmountInput, saveOrder,
     goPaymentTab, goDocsTab, sendReminder,
-    dismissOnboarding, replayOnboarding, toggleChat, sendChatMessage
+    dismissOnboarding, replayOnboarding, toggleChat, sendChatMessage,
+    nudgeGoToLC, dismissNudge,
+    openHelp, closeHelp,
+    claimPremium
   };
 
 })();

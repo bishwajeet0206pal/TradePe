@@ -52,6 +52,32 @@ const DATA = {
       reliabilityScore: 'Good',
       totalOrders: 2,
       docsRequired: ['Commercial Invoice', 'Packing List', 'Bill of Lading']
+    },
+    {
+      id: 'BUY-004',
+      name: 'Sterling & Co',
+      country: 'United Kingdom',
+      countryCode: 'GB',
+      currency: 'GBP',
+      defaultPaymentTerms: 'open',
+      isNew: false,
+      avgPaymentDays: 18,
+      reliabilityScore: 'Good',
+      totalOrders: 3,
+      docsRequired: ['Commercial Invoice', 'Packing List', 'Bill of Lading', 'Packing Declaration']
+    },
+    {
+      id: 'BUY-005',
+      name: 'Yamamoto Trading',
+      country: 'Japan',
+      countryCode: 'JP',
+      currency: 'JPY',
+      defaultPaymentTerms: 'advance',
+      isNew: false,
+      avgPaymentDays: 5,
+      reliabilityScore: 'Excellent',
+      totalOrders: 6,
+      docsRequired: ['Commercial Invoice', 'Packing List', 'Bill of Lading', 'Certificate of Origin']
     }
   ],
 
@@ -463,6 +489,164 @@ const DATA = {
         { id: 'doc-211-1', name: 'Commercial Invoice',  uploaded: true,  required: true },
         { id: 'doc-211-2', name: 'Packing List',        uploaded: false, required: true },
         { id: 'doc-211-3', name: 'Bill of Lading',      uploaded: false, required: true }
+      ]
+    },
+
+    {
+      id: 'TRP-212',
+      buyerId: 'BUY-004',
+      invoiceNumber: 'INV-2026-009',
+      amountUSD: 52000,
+      currency: 'GBP',
+      paymentTerms: 'open',
+      dueDays: 30,
+      dueDateDisplay: '15 May 2026',
+      daysRemaining: -11,
+      stage: 'overdue',
+      urgency: 'overdue',
+      lcTriggered: true,
+      lcApplied: false,
+      lcDismissed: true,
+      financingOffered: true,
+      financingApplied: false,
+      financingDismissed: false,
+      paymentRequestSent: true,
+      paymentRequestSentDate: '15 Apr 2026',
+      buyerActivity: [
+        { label: 'Email delivered',   ts: '15 Apr, 10:00 AM', done: true },
+        { label: 'Email opened',      ts: '15 Apr, 2:00 PM',  done: true },
+        { label: 'Portal accessed',   ts: '18 Apr, 9:00 AM',  done: true },
+        { label: 'Payment initiated', ts: null,                done: false }
+      ],
+      timeline: [
+        { step: 'Order Created',       date: '10 Apr 2026', status: 'done' },
+        { step: 'Payment Requested',   date: '15 Apr 2026', status: 'done' },
+        { step: 'Payment Received',    date: null,           status: 'current' },
+        { step: 'Goods Shipped',       date: null,           status: 'locked' },
+        { step: 'Documents Uploaded',  date: null,           status: 'locked' },
+        { step: 'Order Closed',        date: null,           status: 'locked' }
+      ],
+      documents: [
+        { id: 'doc-212-1', name: 'Commercial Invoice',    uploaded: false, required: true },
+        { id: 'doc-212-2', name: 'Packing List',          uploaded: false, required: true },
+        { id: 'doc-212-3', name: 'Bill of Lading',        uploaded: false, required: true },
+        { id: 'doc-212-4', name: 'Packing Declaration',   uploaded: false, required: true }
+      ]
+    },
+
+    {
+      id: 'TRP-213',
+      buyerId: 'BUY-005',
+      invoiceNumber: 'INV-2026-010',
+      amountUSD: 38000,
+      currency: 'JPY',
+      paymentTerms: 'advance',
+      stage: 'completed',
+      urgency: 'completed',
+      lcTriggered: false,
+      financingOffered: false,
+      paymentRequestSent: true,
+      paymentRequestSentDate: '1 May 2026',
+      paymentConfirmedDate: '3 May 2026',
+      shippedDate: '5 May 2026',
+      closedDate: '12 May 2026',
+      buyerActivity: [
+        { label: 'Email delivered',   ts: '1 May, 10:00 AM', done: true },
+        { label: 'Email opened',      ts: '1 May, 11:00 AM', done: true },
+        { label: 'Portal accessed',   ts: '2 May, 9:00 AM',  done: true },
+        { label: 'Payment initiated', ts: '3 May, 2:00 PM',  done: true }
+      ],
+      timeline: [
+        { step: 'Order Created',       date: '30 Apr 2026', status: 'done' },
+        { step: 'Payment Requested',   date: '1 May 2026',  status: 'done' },
+        { step: 'Payment Received',    date: '3 May 2026',  status: 'done' },
+        { step: 'Goods Shipped',       date: '5 May 2026',  status: 'done' },
+        { step: 'Documents Uploaded',  date: '10 May 2026', status: 'done' },
+        { step: 'Order Closed',        date: '12 May 2026', status: 'done' }
+      ],
+      documents: [
+        { id: 'doc-213-1', name: 'Commercial Invoice',     uploaded: true, required: true },
+        { id: 'doc-213-2', name: 'Packing List',           uploaded: true, required: true },
+        { id: 'doc-213-3', name: 'Bill of Lading',         uploaded: true, required: true },
+        { id: 'doc-213-4', name: 'Certificate of Origin',  uploaded: true, required: true }
+      ],
+      buyerMemory: { paymentDays: 3, reliabilityScore: 'Excellent' }
+    },
+
+    {
+      id: 'TRP-214',
+      buyerId: 'BUY-004',
+      invoiceNumber: 'INV-2026-011',
+      amountUSD: 19500,
+      currency: 'GBP',
+      paymentTerms: 'open',
+      dueDays: 14,
+      dueDateDisplay: '8 Jun 2026',
+      daysRemaining: 9,
+      stage: 'payment-pending',
+      urgency: 'needs-attention',
+      lcTriggered: false,
+      lcApplied: false,
+      financingOffered: true,
+      financingApplied: false,
+      financingDismissed: false,
+      paymentRequestSent: true,
+      paymentRequestSentDate: '25 May 2026',
+      buyerActivity: [
+        { label: 'Email delivered',   ts: '25 May, 10:00 AM', done: true },
+        { label: 'Email opened',      ts: '25 May, 3:00 PM',  done: true },
+        { label: 'Portal accessed',   ts: null,                done: false },
+        { label: 'Payment initiated', ts: null,                done: false }
+      ],
+      timeline: [
+        { step: 'Order Created',       date: '23 May 2026', status: 'done' },
+        { step: 'Payment Requested',   date: '25 May 2026', status: 'done' },
+        { step: 'Payment Received',    date: null,           status: 'current' },
+        { step: 'Goods Shipped',       date: null,           status: 'locked' },
+        { step: 'Documents Uploaded',  date: null,           status: 'locked' },
+        { step: 'Order Closed',        date: null,           status: 'locked' }
+      ],
+      documents: [
+        { id: 'doc-214-1', name: 'Commercial Invoice',    uploaded: false, required: true },
+        { id: 'doc-214-2', name: 'Packing List',          uploaded: false, required: true },
+        { id: 'doc-214-3', name: 'Bill of Lading',        uploaded: false, required: true },
+        { id: 'doc-214-4', name: 'Packing Declaration',   uploaded: false, required: true }
+      ]
+    },
+
+    {
+      id: 'TRP-215',
+      buyerId: 'BUY-005',
+      invoiceNumber: 'INV-2026-012',
+      amountUSD: 24000,
+      currency: 'JPY',
+      paymentTerms: 'advance',
+      stage: 'payment-confirmed',
+      urgency: 'active',
+      lcTriggered: false,
+      financingOffered: false,
+      paymentRequestSent: true,
+      paymentRequestSentDate: '20 May 2026',
+      paymentConfirmedDate: '22 May 2026',
+      buyerActivity: [
+        { label: 'Email delivered',   ts: '20 May, 10:00 AM', done: true },
+        { label: 'Email opened',      ts: '20 May, 11:00 AM', done: true },
+        { label: 'Portal accessed',   ts: '21 May, 9:00 AM',  done: true },
+        { label: 'Payment initiated', ts: '22 May, 1:00 PM',  done: true }
+      ],
+      timeline: [
+        { step: 'Order Created',       date: '18 May 2026', status: 'done' },
+        { step: 'Payment Requested',   date: '20 May 2026', status: 'done' },
+        { step: 'Payment Received',    date: '22 May 2026', status: 'done' },
+        { step: 'Goods Shipped',       date: null,           status: 'current' },
+        { step: 'Documents Uploaded',  date: null,           status: 'locked' },
+        { step: 'Order Closed',        date: null,           status: 'locked' }
+      ],
+      documents: [
+        { id: 'doc-215-1', name: 'Commercial Invoice',     uploaded: false, required: true },
+        { id: 'doc-215-2', name: 'Packing List',           uploaded: false, required: true },
+        { id: 'doc-215-3', name: 'Bill of Lading',         uploaded: false, required: true },
+        { id: 'doc-215-4', name: 'Certificate of Origin',  uploaded: false, required: true }
       ]
     }
   ],
