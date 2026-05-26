@@ -39,7 +39,8 @@ const app = (() => {
       },
       unlocked: false,
       claimed: false
-    }
+    },
+    filter: null
   };
 
   // ============================================================
@@ -100,6 +101,15 @@ const app = (() => {
   function goAnalytics()   { renderAnalytics(); showScreen('analytics'); }
   function goProfile()     { showScreen('profile'); }
 
+  function filterOrders(filterName) {
+    if (S.filter === filterName) {
+      S.filter = null;
+    } else {
+      S.filter = filterName;
+    }
+    renderHome();
+  }
+
   // ============================================================
   // HOME SCREEN
   // ============================================================
@@ -117,20 +127,22 @@ const app = (() => {
     const completed = S.orders.filter(o => o.stage === 'completed').length;
     const overdue   = S.orders.filter(o => o.urgency === 'overdue').length;
 
+    const f = S.filter;
+
     document.getElementById('home-counters').innerHTML = `
-      <div class="counter-card">
+      <div class="counter-card ${f === 'active' ? 'selected' : ''}" onclick="app.filterOrders('active')" style="cursor:pointer;">
         <div class="counter-label">Active</div>
         <div class="counter-value">${active}</div>
       </div>
-      <div class="counter-card attention">
+      <div class="counter-card attention ${f === 'needs-attention' ? 'selected' : ''}" onclick="app.filterOrders('needs-attention')" style="cursor:pointer;">
         <div class="counter-label">Needs Attention</div>
         <div class="counter-value">${attention}</div>
       </div>
-      <div class="counter-card completed">
+      <div class="counter-card completed ${f === 'completed' ? 'selected' : ''}" onclick="app.filterOrders('completed')" style="cursor:pointer;">
         <div class="counter-label">Completed</div>
         <div class="counter-value">${completed}</div>
       </div>
-      <div class="counter-card overdue">
+      <div class="counter-card overdue ${f === 'overdue' ? 'selected' : ''}" onclick="app.filterOrders('overdue')" style="cursor:pointer;">
         <div class="counter-label">Overdue</div>
         <div class="counter-value">${overdue}</div>
       </div>`;
@@ -138,9 +150,32 @@ const app = (() => {
 
   function renderOrderCards() {
     const urgencyRank = { 'overdue': 0, 'needs-attention': 1, 'active': 2, 'completed': 3 };
-    const sorted = [...S.orders].sort((a, b) =>
+    
+    // Apply active filter
+    let filtered = [...S.orders];
+    if (S.filter) {
+      if (S.filter === 'completed') {
+        filtered = filtered.filter(o => o.stage === 'completed');
+      } else {
+        filtered = filtered.filter(o => o.urgency === S.filter);
+      }
+    }
+
+    const sorted = filtered.sort((a, b) =>
       (urgencyRank[a.urgency] ?? 4) - (urgencyRank[b.urgency] ?? 4)
     );
+
+    // Empty state if no orders match the active filter
+    if (sorted.length === 0) {
+      document.getElementById('home-orders-list').innerHTML = `
+        <div class="empty-state-card" style="text-align:center; padding: var(--s8) var(--s5); border: 1px dashed var(--border); border-radius: var(--r-lg); background: var(--surface); margin-top:var(--s4);">
+          <div style="font-size: 32px; margin-bottom: var(--s3);">🎉</div>
+          <div style="font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: var(--s1);">All caught up!</div>
+          <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: var(--s4);">No orders in this category require action.</div>
+          <button class="btn btn-secondary btn-sm" onclick="app.filterOrders(null)" style="display:inline-flex; margin: 0 auto;">Clear Filter</button>
+        </div>`;
+      return;
+    }
 
     const flags = { 'US': '🇺🇸', 'DE': '🇩🇪', 'AE': '🇦🇪', 'GB': '🇬🇧', 'JP': '🇯🇵' };
 
@@ -1512,6 +1547,9 @@ const app = (() => {
       claimed: false
     };
     
+    // Reset filters
+    S.filter = null;
+    
     // Hide premium badges
     document.getElementById('user-premium-badge').style.display = 'none';
     document.getElementById('header-premium-badge').style.display = 'none';
@@ -1939,7 +1977,8 @@ const app = (() => {
     nudgeGoToLC, dismissNudge,
     openHelp, closeHelp,
     claimPremium,
-    saveProfile
+    saveProfile,
+    filterOrders
   };
 
 })();
